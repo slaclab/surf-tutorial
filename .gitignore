@@ -1,0 +1,57 @@
+# SVN files
+.svn*
+
+# EMACS temp files
+*~
+
+# Compiled source files
+*.com
+*.class
+*.dll
+*.exe
+*.o
+*.so
+*.pyc
+*.bin
+*.ld
+*.dat
+*.htm
+*.log
+
+# Matlab
+*.autosave
+*.slxc
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumps.db
+*.swp
+build.info
+
+# Build directories 
+build*
+images*
+bin*
+.Xil*
+.obj*
+.ipynb_checkpoints*
+*.jou
+slprj*
+
+# Only .bit.gz and .mcs.gz should be committed to git
+*.bit
+*.mcs
+*.gz
+*.ltx
+*.hdf
+*.vho
+*.zip
+*.xsa
+*.pdi
+*.bif
+*.elf
