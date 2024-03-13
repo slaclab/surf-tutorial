@@ -26,8 +26,7 @@ use ruckus.BuildInfoPkg.all;
 
 entity MyAxiLiteEndpoint is
    generic (
-      TPD_G       : time    := 1 ns;    -- Simulated propagation delay
-      RST_ASYNC_G : boolean := false);  -- TRUE:
+      TPD_G : time := 1 ns);            -- Simulated propagation delay
    port (
       -- AXI-Lite Bus
       axilClk         : in  sl;
