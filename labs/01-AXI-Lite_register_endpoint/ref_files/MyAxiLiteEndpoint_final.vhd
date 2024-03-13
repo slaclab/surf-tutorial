@@ -21,12 +21,12 @@ library surf;
 use surf.StdRtlPkg.all;
 use surf.AxiLitePkg.all;
 
-library ruckus;
-use ruckus.BuildInfoPkg.all;
-
 entity MyAxiLiteEndpoint is
    generic (
-      TPD_G : time := 1 ns);            -- Simulated propagation delay
+      TPD_G          : time := 1 ns;    -- Simulated propagation delay
+      PRJ_VERSION_G  : slv(31 downto 0);
+      GIT_HASH_G     : slv(159 downto 0);
+      BUILD_STRING_G : Slv32Array(0 to 63));
    port (
       -- AXI-Lite Bus
       axilClk         : in  sl;
@@ -38,8 +38,6 @@ entity MyAxiLiteEndpoint is
 end MyAxiLiteEndpoint;
 
 architecture behavioral of MyAxiLiteEndpoint is
-
-   constant BUILD_INFO_DECODED_C : BuildInfoRetType := toBuildInfo(BUILD_INFO_C);
 
    type RegType is record
       scratchPad     : slv(31 downto 0);
@@ -112,8 +110,8 @@ begin
       -- Mapping read/write registers
       -------------------------------
 
-      -- Example of mapping a constant value to the register mapp
-      axiSlaveRegisterR(axilEp, x"000", 0, BUILD_INFO_DECODED_C.fwVersion);  -- BUILD_INFO_DECODED_C.fwVersion is "slv(31 downto 0)" type
+      -- Example of mapping a constant value to the register map
+      axiSlaveRegisterR(axilEp, x"000", 0, PRJ_VERSION_G);
 
       -- Example of mapping a local read/write register
       axiSlaveRegister (axilEp, x"004", 0, v.scratchPad);  -- scratchPad is a general 32-bit register
@@ -129,10 +127,10 @@ begin
       axiSlaveRegisterR(axilEp, x"011", 0, r.enableCnt);
 
       -- Example of register map with a value that's larger than 32-bit value
-      axiSlaveRegisterR(axilEp, x"100", 0, BUILD_INFO_DECODED_C.gitHash);  -- BUILD_INFO_DECODED_C.gitHash is "slv(159 downto 0)" type
+      axiSlaveRegisterR(axilEp, x"100", 0, GIT_HASH_G);
 
       -- Example of an array of 32-bit registers being mapped
-      axiSlaveRegisterR(axilEp, x"200", BUILD_INFO_DECODED_C.buildString);  -- BUILD_INFO_DECODED_C.buildString is "Slv32Array(0 to 63)" type
+      axiSlaveRegisterR(axilEp, x"200", BUILD_STRING_G);
 
       ---------------------------
       -- Closeout the transaction

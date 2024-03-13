@@ -1,4 +1,6 @@
 -------------------------------------------------------------------------------
+-- Company    : SLAC National Accelerator Laboratory
+-------------------------------------------------------------------------------
 -- Description: Template to start from for this lab
 -------------------------------------------------------------------------------
 -- This file is part of 'surf-tutorial'.
@@ -19,12 +21,12 @@ library surf;
 use surf.StdRtlPkg.all;
 use surf.AxiLitePkg.all;
 
-library ruckus;
-use ruckus.BuildInfoPkg.all;
-
 entity MyAxiLiteEndpoint is
    generic (
-      TPD_G : time := 1 ns);            -- Simulated propagation delay
+      TPD_G          : time := 1 ns;    -- Simulated propagation delay
+      PRJ_VERSION_G  : slv(31 downto 0);
+      GIT_HASH_G     : slv(159 downto 0);
+      BUILD_STRING_G : Slv32Array(0 to 63));
    port (
       -- AXI-Lite Bus
       axilClk         : in  sl;
@@ -36,8 +38,6 @@ entity MyAxiLiteEndpoint is
 end MyAxiLiteEndpoint;
 
 architecture behavioral of MyAxiLiteEndpoint is
-
-   constant BUILD_INFO_DECODED_C : BuildInfoRetType := toBuildInfo(BUILD_INFO_C);
 
    type RegType is record
       scratchPad     : slv(31 downto 0);

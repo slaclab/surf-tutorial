@@ -23,6 +23,9 @@ library surf;
 use surf.StdRtlPkg.all;
 use surf.AxiLitePkg.all;
 
+library ruckus;
+use ruckus.BuildInfoPkg.all;
+
 entity MyAxiLiteEndpointWrapper is
    generic (
       EN_ERROR_RESP : boolean  := false;
@@ -53,6 +56,8 @@ entity MyAxiLiteEndpointWrapper is
 end MyAxiLiteEndpointWrapper;
 
 architecture mapping of MyAxiLiteEndpointWrapper is
+
+   constant BUILD_INFO_DECODED_C : BuildInfoRetType := toBuildInfo(BUILD_INFO_C);
 
    constant ADDR_WIDTH_C : positive := 12;  -- Must match the entity's port width
 
@@ -102,6 +107,10 @@ begin
          axilWriteSlave  => axilWriteSlave);
 
    U_MyAxiLiteEndpoint : entity work.MyAxiLiteEndpoint
+      generic map (
+         PRJ_VERSION_G  => BUILD_INFO_DECODED_C.fwVersion,
+         GIT_HASH_G     => BUILD_INFO_DECODED_C.gitHash,
+         BUILD_STRING_G => BUILD_INFO_DECODED_C.buildString)
       port map (
          -- AXI-Lite Interface
          axilClk         => axilClk,

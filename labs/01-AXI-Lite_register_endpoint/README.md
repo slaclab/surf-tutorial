@@ -33,16 +33,10 @@ At the top of the template, the following libraries/packages are included:
 library surf;
 use surf.StdRtlPkg.all;
 use surf.AxiLitePkg.all;
-
-library ruckus;
-use ruckus.BuildInfoPkg.all;
 ```
 Both the [Standard Logic Real Time Logic Package (StdRtlPkg)](https://github.com/slaclab/surf/blob/v2.47.1/base/general/rtl/StdRtlPkg.vhd)
 and [AXI-Lite Package (AxiLitePkg)](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd)
-are included from SURF.  We also include Build
-Information Package (BuildInfoPkg) from ruckus, which is an auto-generated
-VHDL file that contains useful information about the build at the time
-of the build.
+are included from SURF.
 
 <!--- ########################################################################################### -->
 
@@ -52,7 +46,10 @@ This MyAxiLiteEndpoint has the following entity definition:
 ```vhdl
 entity MyAxiLiteEndpoint is
    generic (
-      TPD_G : time := 1 ns); -- Simulated propagation delay
+      TPD_G          : time := 1 ns;    -- Simulated propagation delay
+      FW_VERSION_G   : slv(31 downto 0);
+      GIT_HASH_G     : slv(159 downto 0);
+      BUILD_STRING_G : Slv32Array(0 to 63));
    port (
       -- AXI-Lite Bus
       axilClk         : in  sl;
@@ -66,6 +63,10 @@ end MyAxiLiteEndpoint;
 * `TPD_G`: Simulation only generic used to add delay after the register stage.
 This generic has no impact to synthesis or Place and Route (PnR).
 Primary purpose is to help with visually looking at simulation waveforms.
+* `PRJ_VERSION_G`: same as `PRJ_VERSION` environmental variable in the local Makefile.
+* `GIT_HASH_G`: 160-bit value of the git repo's hash at the time of the build. A zero value will be used if the git clone is "dirty".
+* `BUILD_STRING_G`: an ASCII string of useful build information at the
+time of the build that's packed into 64 by 32-bit std_logic_vectors
 * `axilClk`: AXI-Lite clock
 * `axilRst`: AXI-Lite reset (active HIGH)
 * `axilReadMaster`: AXI-Lite read master input.
@@ -106,8 +107,6 @@ contains the following signals (defined in [AxiLitePkg](https://github.com/slacl
 
 This MyAxiLiteEndpoint has the following signals, types, constants:
 ```vhdl
-   constant BUILD_INFO_DECODED_C : BuildInfoRetType := toBuildInfo(BUILD_INFO_C);
-
    type RegType is record
       scratchPad     : slv(31 downto 0);
       cnt            : slv(31 downto 0);
@@ -130,10 +129,6 @@ This MyAxiLiteEndpoint has the following signals, types, constants:
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
 ```
-* `BUILD_INFO_DECODED_C`: [decoded build information](https://github.com/slaclab/surf/blob/v2.47.1/base/general/rtl/StdRtlPkg.vhd#L1459-L1469) that contains the following:
-  - `buildString`: ASCII string of useful build information at the time of the build that's packed into 64 by 32-bit std_logic_vectors
-  - `fwVersion`: defined by `PRJ_VERSION` environmental variable in the local Makefile
-  - `gitHash`: 160-bit value of the git repo's hash at the time of the build
 * `RegType`: record type definition for the registers in the “two-process” coding style
   - `scratchPad`: 32-bit general purpose read/write register
   - `cnt`: 32-bit counter that's controlled by startCnt/stopCnt
@@ -335,14 +330,13 @@ where ...
 
 <!--- ########################################################################################### -->
 
-### Add BUILD_INFO_DECODED_C.fwVersion (Read-only Register)
+### Add PRJ_VERSION_G (Read-only Register)
 
 Replace `-- Placeholder for your code will go here` line with the following:
 ```vhdl
-      axiSlaveRegisterR(axilEp, x"000", 0, BUILD_INFO_DECODED_C.fwVersion);
+      axiSlaveRegisterR(axilEp, x"000", 0, PRJ_VERSION_G);
 ```
-`BUILD_INFO_DECODED_C.fwVersion` is defined in the BuildInfoPkg package and
-will equal the `PRJ_VERSION` environmental variable in the local Makefile.
+`PRJ_VERSION_G` generic is the same as `PRJ_VERSION` environmental variable in the local Makefile.
 The `axiSlaveRegisterR()` VHDL code above will map the 32-bit value
 to address offset 0x000 using `axilEp` to hold the transaction response
 information. When the read address is `0x----_-000`, then the `fwVersion` will
@@ -426,29 +420,29 @@ the same behavior as if we mapped to 0x010 address offset with a 8 bitoffset.
 
 <!--- ########################################################################################### -->
 
-### Add BUILD_INFO_DECODED_C.gitHash (read-only Registers)
+### Add GIT_HASH_G (read-only Registers)
 
 Next, add the following register to the "Mapping read/write registers" section:
 ```vhdl
-      axiSlaveRegisterR(axilEp, x"100", 0, BUILD_INFO_DECODED_C.gitHash);
+      axiSlaveRegisterR(axilEp, x"100", 0, GIT_HASH_G);
 ```
-`BUILD_INFO_DECODED_C.gitHash` is a 160-bit value of the git repo's hash at the time of the
-build.  It is auto-generated in the BuildInfoPkg package.
+
+`GIT_HASH_G` is 160-bit value of the git repo's hash at the time of the build 
+and is a zero value will be used if the git clone is "dirty".
 axiSlaveRegister()/axiSlaveRegisterR() supports mapping values that are greater
 than 32-bit bits, which will require multiple AXI-Lite read (or write)
 transactions to get (or set) the value.
 
 <!--- ########################################################################################### -->
 
-### Add BUILD_INFO_DECODED_C.buildString (read-only Registers)
+### Add BUILD_STRING_G (read-only Registers)
 
 Next, add the following register to the "Mapping read/write registers" section:
 ```vhdl
-      axiSlaveRegisterR(axilEp, x"200", BUILD_INFO_DECODED_C.buildString);
+      axiSlaveRegisterR(axilEp, x"200", BUILD_STRING_G);
 ```
-`BUILD_INFO_DECODED_C.buildString` is an ASCII string of useful build information at the
-time of the build that's packed into 64 by 32-bit std_logic_vectors ("Slv32Array(0 to 63)").
-`BUILD_INFO_DECODED_C.buildString` is auto-generated in the BuildInfoPkg package.
+ `BUILD_STRING_G` is an ASCII string of useful build information at the
+time of the build that's packed into 64 by 32-bit std_logic_vectors
 axiSlaveRegister()/axiSlaveRegisterR() supports mapping of an array of
 32-bit registers, which will require multiple AXI-Lite read (or write)
 transactions to get (or set) the value.
@@ -482,7 +476,7 @@ for both tools is to use a wrapper that translates the AXI record types to `std_
 ```vhdl
 entity MyAxiLiteEndpointWrapper is
    generic (
-      EN_ERROR_RESP : boolean  := true;
+      EN_ERROR_RESP : boolean  := false;
       FREQ_HZ       : positive := 100000000);             -- Units of Hz
    port (
       -- AXI-Lite Interface
@@ -510,6 +504,8 @@ entity MyAxiLiteEndpointWrapper is
 end MyAxiLiteEndpointWrapper;
 
 architecture mapping of MyAxiLiteEndpointWrapper is
+
+   constant BUILD_INFO_DECODED_C : BuildInfoRetType := toBuildInfo(BUILD_INFO_C);
 
    constant ADDR_WIDTH_C : positive := 12;  -- Must match the entity's port width
 
@@ -559,6 +555,10 @@ begin
          axilWriteSlave  => axilWriteSlave);
 
    U_MyAxiLiteEndpoint : entity work.MyAxiLiteEndpoint
+      generic map (
+         PRJ_VERSION_G  => BUILD_INFO_DECODED_C.fwVersion,
+         GIT_HASH_G     => BUILD_INFO_DECODED_C.gitHash,
+         BUILD_STRING_G => BUILD_INFO_DECODED_C.buildString)
       port map (
          -- AXI-Lite Interface
          axilClk         => axilClk,
@@ -570,6 +570,11 @@ begin
 
 end mapping;
 ```
+Here's an example of what the wrapper looks like when added to Vivado IP integator (A.K.A. "Block Design"):
+```tcl
+create_bd_cell -type module -reference MyAxiLiteEndpointWrapper MyAxiLiteEndpoint_0
+```
+<img src="ref_files/IpIntegrator.png" width="1000">
 
 <!--- ########################################################################################### -->
 
