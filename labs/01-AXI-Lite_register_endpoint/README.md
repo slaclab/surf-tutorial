@@ -133,7 +133,7 @@ This MyAxiLiteEndpoint has the following signals, types, constants:
 ```
 * `RegType`: record type definition for the registers in the “two-process” coding style
   - `scratchPad`: 32-bit general purpose read/write register
-  - `cnt`: 32-bit counter that's controlled by startCnt/stopCnt
+  - `cnt`: 32-bit counter that's controlled by enableCnt/resetCnt
   - `enableCnt`: Enable counter flag
   - `resetCnt': Reset the counter to zero
   - `axilReadSlave`: AXI-Lite read slave bus used to respond to a read transactions
@@ -387,7 +387,7 @@ Next, add the following register to the "Mapping read/write registers" section:
 ```vhdl
       axiSlaveRegisterR(axilEp, x"008", 0, r.cnt);
 ```
-`cnt` is 32-bit counter that's controlled by startCnt/stopCnt. Notice how we are
+`cnt` is 32-bit counter that's controlled by enableCnt/resetCnt. Notice how we are
 using the `r.cnt` register (instead of `v.cnt` variable) to get
 the value into the axiSlaveRegisterR() procedure.
 When the read address is `0x----_-008`, then the `cnt` will be returned.
