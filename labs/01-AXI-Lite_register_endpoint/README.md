@@ -57,7 +57,9 @@ entity MyAxiLiteEndpoint is
       axilReadMaster  : in  AxiLiteReadMasterType;
       axilReadSlave   : out AxiLiteReadSlaveType;
       axilWriteMaster : in  AxiLiteWriteMasterType;
-      axilWriteSlave  : out AxiLiteWriteSlaveType);
+      axilWriteSlave  : out AxiLiteWriteSlaveType;
+      statusA         : in sl;
+      statusB         : in slv(3 downto 0));
 end MyAxiLiteEndpoint;
 ```
 * `TPD_G`: Simulation only generic used to add delay after the register stage.
@@ -100,6 +102,8 @@ contains the following signals (defined in [AxiLitePkg](https://github.com/slacl
   - wready  : sl;
   - bresp   : slv(1 downto 0);
   - bvalid  : sl;
+* `statusA`: A 1-bit status input
+* `statusB`: A 4-bit status input
 
 <!--- ########################################################################################### -->
 
@@ -111,8 +115,7 @@ This MyAxiLiteEndpoint has the following signals, types, constants:
       scratchPad     : slv(31 downto 0);
       cnt            : slv(31 downto 0);
       enableCnt      : sl;
-      startCnt       : sl;
-      stopCnt        : sl;
+      resetCnt       : sl;
       axilReadSlave  : AxiLiteReadSlaveType;
       axilWriteSlave : AxiLiteWriteSlaveType;
    end record RegType;
@@ -121,8 +124,7 @@ This MyAxiLiteEndpoint has the following signals, types, constants:
       scratchPad     => x"DEAD_BEEF",
       cnt            => (others => '0'),
       enableCnt      => '0',
-      startCnt       => '0',
-      stopCnt        => '0',
+      resetCnt       => '0',
       axilReadSlave  => AXI_LITE_READ_SLAVE_INIT_C,
       axilWriteSlave => AXI_LITE_WRITE_SLAVE_INIT_C);
 
@@ -133,8 +135,7 @@ This MyAxiLiteEndpoint has the following signals, types, constants:
   - `scratchPad`: 32-bit general purpose read/write register
   - `cnt`: 32-bit counter that's controlled by startCnt/stopCnt
   - `enableCnt`: Enable counter flag
-  - `startCnt`: Write-only register to start the counter
-  - `stopCnt`: Write-only register to stop the counter
+  - `resetCnt': Reset the counter to zero
   - `axilReadSlave`: AXI-Lite read slave bus used to respond to a read transactions
   - `axilWriteSlave`: AXI-Lite write slave bus used to respond to a write transactions
 * `REG_INIT_C`: constant defining the registers' initialized values after reset
@@ -153,11 +154,15 @@ There are two variables defined in the combinatorial process:
 ```
 
 `v` is "RegType", which is the same as the `r` signal.
-At the start of the combinatorial process, there is a `v := r;`.
-This creates a variable copy of the registers.
+At the start of the combinatorial process, there is a `v := r;` assignment.
+This gives `v` the current output value of each register.
 
 The `v` variable is manipulated through the combinatorial process.
 At the very end of the process, there is a `rin <= v;`, which is feed back to the register process.
+This means that every register will default to it's previous value each clock cycle, unless
+directed otherwise in the combinatoral process logic. This is quite powerful, as it elimanates 
+the possiblility of partially assigned registers inferring latches in synthesis. It also often
+simplifies the application logic.
 
 Anywhere in the code that starts with a `v.` means it is a "variable" and `r.` means it is a "registers".
 
@@ -167,24 +172,21 @@ and contains all the information used to detect read/write transaction and retur
 <!--- ########################################################################################### -->
 
 ### Counter Logic
-At the beginning the `startCnt` and `stopCnt` variables are reset to zero.
+At the beginning the `resetCnt` variable is set to `'0'`. As we will see later, this has the effect
+of stobing the register for just 1 clock cycle when it is written by the AXI-Lite bus.
 
 The counter will check if the `enableCnt` register is active.  If active, then increment the counter.
 
-Next, check if the `startCnt` register is active.  If active, then enable the `enableCnt` variable.
+Next it will check if the `resetCnt` register is `'1'`. If so it will reset the counter to zero.
+Note that this overrides any counter increment performed above. By placing this logic "below", 
+we have effectivly specified that `resetCnt` takes precedence over `enableCnt`.
 
-Finally, check if the `stopCnt` register is active.  If active, then disable the `enableCnt` variable.
-
-If both the `startCnt` and `stopCnt` registers are active at the same time,
-the `enableCnt` variable would be set to zero because `stopCnt` "if statement"
-happens later in the combinatorial process.
 
 ```vhdl
       --------------------
-      -- Reset the strobes
+      -- Reset strobe
       --------------------
-      v.startCnt := '0';
-      v.stopCnt  := '0';
+      v.resetCnt := '0';
 
       ------------------------
       -- Counter logic
@@ -196,17 +198,12 @@ happens later in the combinatorial process.
          v.cnt := r.cnt + 1;
       end if;
 
-      -- Check if we are enabling the counter
-      if (r.startCnt = '1') then
+      -- Check if we are resetting the counter
+      if (r.resetCnt = '1') then
          -- Set the flag
-         v.enableCnt := '1';
+         v.cnt := (others => '0');
       end if;
 
-      -- Check if we are disabling the counter
-      if (r.stopCnt = '1') then
-         -- Set the flag
-         v.enableCnt := '0';
-      end if;
 ```
 
 <!--- ########################################################################################### -->
@@ -249,10 +246,23 @@ at the same time. These helper function support simultaneous write/read.
 
 <!--- ########################################################################################### -->
 
+#### Synchronous Reset
+At the bottom of the combinatoral process, a synchronous reset of the entire module is
+encoded. This will override any other assignment to `v` from above, and effectively return all module 
+registers to their initial value on the next clock cycle.
+
+```vhdl
+      if (axilRst = '1') then
+         v := REG_INIT_C;
+      end if;
+```
+
+<!--- ########################################################################################### -->
+
 ## Register Process
 
 This is the "common" boiler plate register process used in all the SURF code.
-It takes the combinatorial output (`rin`) and registers it to the `r` signal
+It takes the combinatorial process output (`rin`) and registers it to the `r` signal
 with a `TPD_G` delay for simulation.
 
 ```vhdl
@@ -383,40 +393,57 @@ the value into the axiSlaveRegisterR() procedure.
 When the read address is `0x----_-008`, then the `cnt` will be returned.
 When the write address is `0x----_-008`, then the `AXI_RESP_DECERR_C`
 will be the write transaction response.  Every time that we read from this register
-we will get the "current" value of the "cnt", which could be changing between
+we will get the "current" value of the "cnt", which could be changing between AXI-Lite
 register transactions.
 
 <!--- ########################################################################################### -->
 
-### Add startCnt/stopCnt (write-only Registers)
+### Add enableCnt (read/write Register)
 
 Next, add the following register to the "Mapping read/write registers" section:
 ```vhdl
-      axiSlaveRegister (axilEp, x"00C", 0, v.startCnt);
-      axiSlaveRegister (axilEp, x"00C", 1, v.stopCnt);
+      axiSlaveRegister(axilEp, x"00C", 0, v.enableCnt);
 ```
-`startCnt` and `stopCnt` are used to start and stop the counter. These are
-"write-only" registers because their values changed externally from the AXI-Lite
-interface in the "reset strobes" logic at the very beginning of the combinatorial process.
-We are mapping two registers on the same AXI-Lite write address in this example. The
-3rd argument (default=0) is the bitoffset.  The bitoffset is being explicitly set
-to define where in the 32-bit data that maps to the registers.
+`enableCnt` is the enable counter flag. When encoded this way, the register will retain the 
+value written to it from the AXI-bus on subsequent clock cycles. 
 
-Note: If a read transaction happens at this write-only register offset, the `AXI_RESP_DECERR_C`
-will be the read transaction response.
 
 <!--- ########################################################################################### -->
 
-### Add enableCnt (read-only Registers)
+### Add resetCnt ("write-only" Register)
 
 Next, add the following register to the "Mapping read/write registers" section:
 ```vhdl
-      axiSlaveRegisterR(axilEp, x"010", 8, r.enableCnt);
+      axiSlaveRegister(axilEp, x"010", 0, v.resetCnt);
 ```
-`enableCnt` is the enable counter flag. While axiSlaveRegister()/axiSlaveRegisterR()
-supports `non-4 byte word aligned` (e.g. address offset (0x011) with bitoffset=0),
-it is `best practice` to always map the firmware to 4-byte strides.
-For this example we mapped to 0x010 address offset with a 8 bitoffset.
+`resetCnt` is used to reset the counter to zero. Recall the `v.resetCnt := '0'` statement from
+the counter logic above. When coded this way, writing x"010" to '1' via AXI-Lite will override
+the `v.resetCnt := '0'` assignment and cause the `resetCnt` register to pulse high for one 
+clock cycle. We call this a "write-only" register because the write has no effect on the readback 
+value. Reading x"010 on the AXI-Lite bus will always return 0, because the `resetCnt` register
+will have already returned back to 0.
+
+<!--- ########################################################################################### -->
+
+### Add statusA and statusB (read-only Registers)
+
+Next, add the following register to the "Mapping read/write registers" section:
+```vhdl
+      axiSlaveRegisterR(axilEp, x"014", 0, statusA);
+      axiSlaveRegisterR(axilEp, x"014", 8, statusB);
+```
+`statusA` and `statusB` registers are taken directly from the module inputs. (It is assumed that
+they are synchronous to `axilClk`.) We are mapping two registers on the same AXI-Lite
+address in this example. The 3rd argument is the bitOffset. The bitOffset determines where 
+in the 32-bit data that the register is mapped.
+
+Note that the statusB register could be equivalenly encoded as
+```vhdl
+      axiSlaveRegisterR(axilEp, x"015", 0, statusB);
+```
+This "non 4-byte algined" address is supported by the `axiSlaveRegister()` procedures. It is
+good practice however to keep all addresses aligned with 4-byte strides, with bitOffsets to
+determine the 32-bit position, as originally shown.
 
 <!--- ########################################################################################### -->
 
@@ -628,7 +655,7 @@ In the test_MyAxiLiteEndpointWrapper.py, the following code is used to interact 
     # Check the default r.cnt and r.enableCnt values
     rdTxn = await tb.axil.read(address=0x008, length=4)
     tb.log.custom( f'cnt(init value)={rdDataToStr(rdTxn.data)}' )
-    rdTxn = await tb.axil.read(address=0x011, length=1)
+    rdTxn = await tb.axil.read(address=0x00C, length=1)
     tb.log.custom( f'enableCnt(init value)={rdDataToStr(rdTxn.data)}' )
 
     # Start the counter and wait 100 cycles
@@ -639,16 +666,18 @@ In the test_MyAxiLiteEndpointWrapper.py, the following code is used to interact 
     # Measure r.cnt and r.enableCnt values
     rdTxn = await tb.axil.read(address=0x008, length=4)
     tb.log.custom( f'cnt(running)={rdDataToStr(rdTxn.data)}' )
-    rdTxn = await tb.axil.read(address=0x011, length=1)
+    rdTxn = await tb.axil.read(address=0x00C, length=1)
     tb.log.custom( f'enableCnt(running)={rdDataToStr(rdTxn.data)}' )
 
-    # Stop the counter and check final count value and that it actually stopped
-    wrTxn = await tb.axil.write(address=0x00C, data=int(0x2).to_bytes(4, "little"))
+    # Reset the counter and read it again, then stop the counter
+    wrTxn = await tb.axil.write(address=0x010, data=int(0x1).to_bytes(4, "little"))
     assert wrTxn.resp == AxiResp.OKAY
     rdTxn = await tb.axil.read(address=0x008, length=4)
-    tb.log.custom( f'cnt(stopped)={rdDataToStr(rdTxn.data)}' )
-    rdTxn = await tb.axil.read(address=0x011, length=1)
-    tb.log.custom( f'enableCnt(stopped)={rdDataToStr(rdTxn.data)}' )
+    tb.log.custom( f'cnt(reset)={rdDataToStr(rdTxn.data)}' )
+    rdTxn = await tb.axil.read(address=0x00C, length=1)
+    tb.log.custom( f'enableCnt(running)={rdDataToStr(rdTxn.data)}' )
+    wrTxn = await tb.axil.write(address=0x00C, data=int(0x0).to_bytes(4, "little"))
+    assert wrTxn.resp == AxiResp.OKAY
 
     # Get the Git Hash
     rdTxn = await tb.axil.read(address=0x100, length=20)
