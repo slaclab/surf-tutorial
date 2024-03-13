@@ -40,7 +40,7 @@ are included from SURF.
 
 <!--- ########################################################################################### -->
 
-### Entity Definition
+## Entity Definition
 
 This MyAxiLiteEndpoint has the following entity definition:
 ```vhdl
@@ -103,7 +103,7 @@ contains the following signals (defined in [AxiLitePkg](https://github.com/slacl
 
 <!--- ########################################################################################### -->
 
-### Signals, Types, and Constants Definition
+## Signals, Types, and Constants Definition
 
 This MyAxiLiteEndpoint has the following signals, types, constants:
 ```vhdl
