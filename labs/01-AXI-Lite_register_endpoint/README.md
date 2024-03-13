@@ -16,7 +16,7 @@ Please refer to the AXI-Lite protocol specification for the complete details:
 
 ## Copy the template to the RTL directory
 
-First, copy the AXI-Lite endpoint template from the `ref_file`
+First, copy the AXI-Lite endpoint template from the `ref_files`
 directory to the `rtl` and rename it on the way.
 ```bash
 cp ref_files/MyAxiLiteEndpoint_start.vhd rtl/MyAxiLiteEndpoint.vhd
