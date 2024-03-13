@@ -411,12 +411,12 @@ will be the read transaction response.
 
 Next, add the following register to the "Mapping read/write registers" section:
 ```vhdl
-      axiSlaveRegisterR(axilEp, x"011", 0, r.enableCnt);
+      axiSlaveRegisterR(axilEp, x"010", 8, r.enableCnt);
 ```
-`enableCnt` is the enable counter flag. This time we are mapping to a
-`non-4 byte word aligned` address offset (0x011).  Non-4 byte word alignment is
-supported by axiSlaveRegister()/axiSlaveRegisterR().  This mapping will result in
-the same behavior as if we mapped to 0x010 address offset with a 8 bitoffset.
+`enableCnt` is the enable counter flag. While axiSlaveRegister()/axiSlaveRegisterR()
+supports `non-4 byte word aligned` (e.g. address offset (0x011) with bitoffset=0),
+it is `best practice` to always map the firmware to 4-byte strides.
+For this example we mapped to 0x010 address offset with a 8 bitoffset.
 
 <!--- ########################################################################################### -->
 

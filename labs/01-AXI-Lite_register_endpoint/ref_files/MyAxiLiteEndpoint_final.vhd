@@ -123,8 +123,8 @@ begin
       axiSlaveRegister (axilEp, x"00C", 0, v.startCnt);  -- Mapped to BIT0
       axiSlaveRegister (axilEp, x"00C", 1, v.stopCnt);   -- Mapped to BIT1
 
-      -- Example of non-4 byte word alignment
-      axiSlaveRegisterR(axilEp, x"011", 0, r.enableCnt);
+      -- Example: (addr=0x010,bitoffset=8) is same behavior as (addr=0x11,bitoffset=0)
+      axiSlaveRegisterR(axilEp, x"010", 8, r.enableCnt);
 
       -- Example of register map with a value that's larger than 32-bit value
       axiSlaveRegisterR(axilEp, x"100", 0, GIT_HASH_G);
