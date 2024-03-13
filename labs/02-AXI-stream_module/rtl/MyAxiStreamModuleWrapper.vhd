@@ -33,7 +33,7 @@ entity MyAxiStreamModuleWrapper is
       TUSER_WIDTH     : natural range 1 to 8   := 2;
       TID_WIDTH       : natural range 1 to 8   := 1;
       TDEST_WIDTH     : natural range 1 to 8   := 1;
-      TDATA_NUM_BYTES : natural range 1 to 128 := 1);
+      TDATA_NUM_BYTES : natural range 1 to 128 := 4);
    port (
       -- Clock and Reset
       AXIS_ACLK     : in  std_logic;

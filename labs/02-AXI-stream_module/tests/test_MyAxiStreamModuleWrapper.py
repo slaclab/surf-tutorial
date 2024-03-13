@@ -176,7 +176,7 @@ tests_module = 'MyAxiStreamModuleWrapper'
 
 @pytest.mark.parametrize(
     "parameters", [
-        {'TDATA_NUM_BYTES': '4', },  # 32-bit tData (4 bytes)
+        None
     ])
 def test_MyAxiLiteEndpointWrapper(parameters):
 

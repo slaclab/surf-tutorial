@@ -41,7 +41,7 @@ are included from SURF.
 
 ## Entity Definition
 
-This MyAxiLiteEndpoint has the following entity definition:
+This MyAxiStreamModule has the following entity definition:
 ```vhdl
 entity MyAxiStreamModule is
    generic (
@@ -95,7 +95,7 @@ contains the following signals (defined in [AxiStreamPkg](https://github.com/sla
 
 ## Signals, Types, and Constants Definition
 
-This MyAxiLiteEndpoint has the following signals, types, constants:
+This MyAxiStreamModule has the following signals, types, constants:
 ```vhdl
    constant TDATA_BIT_WIDTH_C : positive := 8*AXIS_CONFIG_G.TDATA_BYTES_C;
 
@@ -232,5 +232,262 @@ The variable output value is required because of the 0 cycle latency requirement
 This is commonly known "critical path" when making timing in Place and Route (PnR). SURF framework
 has a module called [AxiStreamPipeline](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-stream/rtl/AxiStreamPipeline.vhd)
       to help with breaking apart that critical path with register with a slight increase in pipeline delay.
+
+<!--- ########################################################################################### -->
+
+## Running the cocoTB testbed
+
+cocoTB is an open-source, coroutine-based co-simulation testbench environment
+for verifying VHDL and Verilog hardware designs. Developed with Python, cocoTB
+eases the testing process by allowing developers to write test scenarios in Python,
+leveraging its extensive libraries and simplicity to create flexible and powerful tests.
+This enables more intuitive interaction with the simulation, making it possible to
+quickly develop complex test sequences, automate testing procedures, and analyze outcomes.
+By integrating cocoTB into our testing framework, we can simulate the behavior of
+AXI stream module, among other components, in a highly efficient and user-friendly manner.
+This introduction aims to familiarize you with the basic concepts and advantages of using
+cocoTB in the context of our lab exercises, setting the stage for the detailed instructions
+that follow on how to deploy and utilize cocoTB to test the MyAxiStreamModuleWrapper effectively.
+
+<!--- ########################################################################################### -->
+
+### Why the `rtl/MyAxiStreamModuleWrapper.vhd`?
+
+cocoTB's AXI extension package does NOT support record types for the AXI interface between
+the firmware and the cocoTB simulation. This is a same issue as with AMD/Xilinx IP Integrator.
+Both tool only accept `std_logic` (`sl`) and `std_logic_vector` (`slv`) port types. The work-around
+for both tools is to use a wrapper that translates the AXI record types to `std_logic` (sl) and
+`std_logic_vector` (slv).  For this lab we will be using
+`surf.SlaveAxiStreamIpIntegrator` and `surf.MasterAxiStreamIpIntegrator` for translation:
+
+```vhdl
+entity MyAxiStreamModuleWrapper is
+   generic (
+      -- IP Integrator AXI Stream Configuration
+      HAS_TLAST       : natural range 0 to 1   := 1;
+      HAS_TKEEP       : natural range 0 to 1   := 1;
+      HAS_TSTRB       : natural range 0 to 1   := 0;
+      HAS_TREADY      : natural range 0 to 1   := 1;
+      TUSER_WIDTH     : natural range 1 to 8   := 2;
+      TID_WIDTH       : natural range 1 to 8   := 1;
+      TDEST_WIDTH     : natural range 1 to 8   := 1;
+      TDATA_NUM_BYTES : natural range 1 to 128 := 4);
+   port (
+      -- Clock and Reset
+      AXIS_ACLK     : in  std_logic;
+      AXIS_ARESETN  : in  std_logic;
+      -- IP Integrator Slave AXI Stream Interface
+      S_AXIS_TVALID : in  std_logic;
+      S_AXIS_TDATA  : in  std_logic_vector((8*TDATA_NUM_BYTES)-1 downto 0);
+      S_AXIS_TSTRB  : in  std_logic_vector(TDATA_NUM_BYTES-1 downto 0);
+      S_AXIS_TKEEP  : in  std_logic_vector(TDATA_NUM_BYTES-1 downto 0);
+      S_AXIS_TLAST  : in  std_logic;
+      S_AXIS_TDEST  : in  std_logic_vector(TDEST_WIDTH-1 downto 0);
+      S_AXIS_TID    : in  std_logic_vector(TID_WIDTH-1 downto 0);
+      S_AXIS_TUSER  : in  std_logic_vector(TUSER_WIDTH-1 downto 0);
+      S_AXIS_TREADY : out std_logic;
+      -- IP Integrator Master AXI Stream Interface
+      M_AXIS_TVALID : out std_logic;
+      M_AXIS_TDATA  : out std_logic_vector((8*TDATA_NUM_BYTES)-1 downto 0);
+      M_AXIS_TSTRB  : out std_logic_vector(TDATA_NUM_BYTES-1 downto 0);
+      M_AXIS_TKEEP  : out std_logic_vector(TDATA_NUM_BYTES-1 downto 0);
+      M_AXIS_TLAST  : out std_logic;
+      M_AXIS_TDEST  : out std_logic_vector(TDEST_WIDTH-1 downto 0);
+      M_AXIS_TID    : out std_logic_vector(TID_WIDTH-1 downto 0);
+      M_AXIS_TUSER  : out std_logic_vector(TUSER_WIDTH-1 downto 0);
+      M_AXIS_TREADY : in  std_logic);
+end MyAxiStreamModuleWrapper;
+
+architecture mapping of MyAxiStreamModuleWrapper is
+
+   constant AXIS_CONFIG_C : AxiStreamConfigType := (
+      TSTRB_EN_C    => ite(HAS_TSTRB = 1, true, false),
+      TDATA_BYTES_C => TDATA_NUM_BYTES,
+      TDEST_BITS_C  => TDEST_WIDTH,
+      TID_BITS_C    => TID_WIDTH,
+      TKEEP_MODE_C  => ite(HAS_TKEEP = 1, TKEEP_NORMAL_C, TKEEP_FIXED_C),
+      TUSER_BITS_C  => TUSER_WIDTH,
+      TUSER_MODE_C  => TUSER_NORMAL_C);
+
+   signal sAxisMaster : AxiStreamMasterType := AXI_STREAM_MASTER_INIT_C;
+   signal sAxisSlave  : AxiStreamSlaveType  := AXI_STREAM_SLAVE_FORCE_C;
+
+   signal mAxisMaster : AxiStreamMasterType := AXI_STREAM_MASTER_INIT_C;
+   signal mAxisSlave  : AxiStreamSlaveType  := AXI_STREAM_SLAVE_FORCE_C;
+
+   signal axisClk : sl := '0';
+   signal axisRst : sl := '0';
+
+begin
+
+   U_ShimLayerSlave : entity surf.SlaveAxiStreamIpIntegrator
+      generic map (
+         INTERFACENAME   => "S_AXIS",
+         HAS_TLAST       => HAS_TLAST,
+         HAS_TKEEP       => HAS_TKEEP,
+         HAS_TSTRB       => HAS_TSTRB,
+         HAS_TREADY      => HAS_TREADY,
+         TUSER_WIDTH     => TUSER_WIDTH,
+         TID_WIDTH       => TID_WIDTH,
+         TDEST_WIDTH     => TDEST_WIDTH,
+         TDATA_NUM_BYTES => TDATA_NUM_BYTES)
+      port map (
+         -- IP Integrator AXI Stream Interface
+         S_AXIS_ACLK    => AXIS_ACLK,
+         S_AXIS_ARESETN => AXIS_ARESETN,
+         S_AXIS_TVALID  => S_AXIS_TVALID,
+         S_AXIS_TDATA   => S_AXIS_TDATA,
+         S_AXIS_TSTRB   => S_AXIS_TSTRB,
+         S_AXIS_TKEEP   => S_AXIS_TKEEP,
+         S_AXIS_TLAST   => S_AXIS_TLAST,
+         S_AXIS_TDEST   => S_AXIS_TDEST,
+         S_AXIS_TID     => S_AXIS_TID,
+         S_AXIS_TUSER   => S_AXIS_TUSER,
+         S_AXIS_TREADY  => S_AXIS_TREADY,
+         -- SURF AXI Stream Interface
+         axisClk        => axisClk,
+         axisRst        => axisRst,
+         axisMaster     => sAxisMaster,
+         axisSlave      => sAxisSlave);
+
+   U_MyAxiStreamModule : entity work.MyAxiStreamModule
+      generic map (
+         AXIS_CONFIG_G => AXIS_CONFIG_C)
+      port map (
+         -- AXI Stream Interface
+         axisClk     => axisClk,
+         axisRst     => axisRst,
+         sAxisMaster => sAxisMaster,
+         sAxisSlave  => sAxisSlave,
+         mAxisMaster => mAxisMaster,
+         mAxisSlave  => mAxisSlave);
+
+   U_ShimLayerMaster : entity surf.MasterAxiStreamIpIntegrator
+      generic map (
+         INTERFACENAME   => "M_AXIS",
+         HAS_TLAST       => HAS_TLAST,
+         HAS_TKEEP       => HAS_TKEEP,
+         HAS_TSTRB       => HAS_TSTRB,
+         HAS_TREADY      => HAS_TREADY,
+         TUSER_WIDTH     => TUSER_WIDTH,
+         TID_WIDTH       => TID_WIDTH,
+         TDEST_WIDTH     => TDEST_WIDTH,
+         TDATA_NUM_BYTES => TDATA_NUM_BYTES)
+      port map (
+         -- IP Integrator AXI Stream Interface
+         M_AXIS_ACLK    => AXIS_ACLK,
+         M_AXIS_ARESETN => AXIS_ARESETN,
+         M_AXIS_TVALID  => M_AXIS_TVALID,
+         M_AXIS_TDATA   => M_AXIS_TDATA,
+         M_AXIS_TSTRB   => M_AXIS_TSTRB,
+         M_AXIS_TKEEP   => M_AXIS_TKEEP,
+         M_AXIS_TLAST   => M_AXIS_TLAST,
+         M_AXIS_TDEST   => M_AXIS_TDEST,
+         M_AXIS_TID     => M_AXIS_TID,
+         M_AXIS_TUSER   => M_AXIS_TUSER,
+         M_AXIS_TREADY  => M_AXIS_TREADY,
+         -- SURF AXI Stream Interface
+         axisClk        => open,        -- same as SlaveAxiStreamIpIntegrator
+         axisRst        => open,        -- same as SlaveAxiStreamIpIntegrator
+         axisMaster     => mAxisMaster,
+         axisSlave      => mAxisSlave);
+
+end mapping;
+```
+Here's an example of what the wrapper looks like when added to Vivado IP integator (A.K.A. "Block Design"):
+```tcl
+create_bd_cell -type module -reference MyAxiStreamModuleWrapper MyAxiStreamModule_0
+```
+<img src="ref_files/IpIntegrator.png" width="1000">
+
+<!--- ########################################################################################### -->
+
+### How to run the cocoTB testing script
+
+Use the Makefile + ruckus + GHDL to collect all the source code via ruckus.tcl for cocoTB simulation:
+```bash
+make
+```
+
+Next, run the cocoTB python script and grep for the CUSTOM logging prints
+```bash
+pytest -rP tests/test_MyAxiStreamModuleWrapper.py  | grep CUSTOM
+```
+
+Here's an example of what the output of that `pytest` command would look like:
+```bash
+$ pytest -rP tests/test_MyAxiStreamModuleWrapper.py  | grep CUSTOM
+INFO     cocotb:simulator.py:305      0.00ns CUSTOM   cocotb.myaxistreammodulewrapper    Test: TDATA_NUM_BYTES=4, idle_inserter=None, backpressure_inserter=None
+INFO     cocotb:simulator.py:305   1510.00ns CUSTOM   cocotb.myaxistreammodulewrapper    .... passed test
+INFO     cocotb:simulator.py:305   1510.00ns CUSTOM   cocotb.myaxistreammodulewrapper    Test: TDATA_NUM_BYTES=4, idle_inserter=None, backpressure_inserter=<function cycle_pause at 0x7fca1abde4d0>
+INFO     cocotb:simulator.py:305   7340.00ns CUSTOM   cocotb.myaxistreammodulewrapper    .... passed test
+INFO     cocotb:simulator.py:305   7340.00ns CUSTOM   cocotb.myaxistreammodulewrapper    Test: TDATA_NUM_BYTES=4, idle_inserter=<function cycle_pause at 0x7fca1abde4d0>, backpressure_inserter=None
+INFO     cocotb:simulator.py:305  13170.00ns CUSTOM   cocotb.myaxistreammodulewrapper    .... passed test
+INFO     cocotb:simulator.py:305  13170.00ns CUSTOM   cocotb.myaxistreammodulewrapper    Test: TDATA_NUM_BYTES=4, idle_inserter=<function cycle_pause at 0x7fca1abde4d0>, backpressure_inserter=<function cycle_pause at 0x7fca1abde4d0>
+INFO     cocotb:simulator.py:305  19000.00ns CUSTOM   cocotb.myaxistreammodulewrapper    .... passed test
+```
+
+In the test_MyAxiStreamModuleWrapper.py, the following code is used to interact with the AXI-Lite endpoint:
+
+```python
+async def run_test(dut, payload_lengths=None, payload_data=None, idle_inserter=None, backpressure_inserter=None):
+
+    # Debug messages in case it fails
+    dut.log.custom( f'Test: TDATA_NUM_BYTES={dut.TDATA_NUM_BYTES.value.integer}, idle_inserter={idle_inserter}, backpressure_inserter={backpressure_inserter}' )
+
+    tb = TB(dut)
+
+    id_count = 2**len(tb.source.bus.tid)
+
+    cur_id = 1
+
+    await tb.cycle_reset()
+
+    tb.set_idle_generator(idle_inserter)
+    tb.set_backpressure_generator(backpressure_inserter)
+
+    test_frames = []
+
+    for test_data in [payload_data(x) for x in payload_lengths()]:
+        test_frame = AxiStreamFrame(test_data)
+        test_frame.tid = cur_id
+        test_frame.tdest = cur_id
+        await tb.source.send(test_frame)
+
+        test_frames.append(test_frame)
+
+        cur_id = (cur_id + 1) % id_count
+
+    for test_frame in test_frames:
+        rx_frame = await tb.sink.recv()
+
+        assert rx_frame.tdata == CalculateExpectedResult(test_frame.tdata, 'little')
+        assert rx_frame.tid == test_frame.tid
+        assert rx_frame.tdest == test_frame.tdest
+        assert not rx_frame.tuser
+
+    assert tb.sink.empty()
+    dut.log.custom( f'.... passed test' )
+```
+
+<!--- ########################################################################################### -->
+
+### How to view the digital logic waveforms after the simulation
+
+After running the cocoTB simulation, a `.ghw` file with all the traces will be dumped
+into the build output path.  You can use `gtkwave` to display these simulation traces:
+```bash
+gtkwave build/MyAxiStreamModuleWrapper/MyAxiStreamModuleWrapper.ghw
+```
+<img src="ref_files/gtkwave.png" width="1000">
+
+<!--- ########################################################################################### -->
+
+## Explore Time!
+
+At this point, we have added all the custom AXI-Lite registers for the
+example cocoTB testbed python provided in the lab.  If you have extra
+time in the lab, please play around with adding/modifying the firmware
+registers and testing them in the cocoTB software simulator.
 
 <!--- ########################################################################################### -->
