@@ -639,7 +639,7 @@ into the build output path.  You can use `gtkwave` to display these simulation t
 ```bash
 gtkwave build/MyAxiLiteEndpointWrapper/MyAxiLiteEndpointWrapper.ghw
 ```
-<img src="ref_files/gtkwave.png" width="500">
+<img src="ref_files/gtkwave.png" width="1000">
 
 <!--- ########################################################################################### -->
 
