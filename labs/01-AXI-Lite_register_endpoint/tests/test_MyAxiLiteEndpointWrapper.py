@@ -185,7 +185,7 @@ def test_MyAxiLiteEndpointWrapper(parameters):
         vhdl_compile_args = ['-fsynopsys','-frelaxed-rules'],
 
         ########################################################################
-        # Dump waveform to file ($ gtkwave sim_build/path/To/{tests_module}.ghw)
+        # Dump waveform to file ($ gtkwave build/MyAxiLiteEndpointWrapper/MyAxiLiteEndpointWrapper.ghw)
         ########################################################################
         sim_args =[f'--wave={tests_module}.ghw'],
     )
