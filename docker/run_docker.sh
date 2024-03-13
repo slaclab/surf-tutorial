@@ -5,5 +5,5 @@ docker run -ti \
    -e DISPLAY=${DISPLAY} \
    -v ${HOME}/.Xauthority:/home/${USER}/.Xauthority \
    -v /etc/localtime:/etc/localtime:ro \
-   -v /home:/home \
+   -v ${HOME}:/home/${USER} \
    surf-tutorial-docker-${USER}:latest /bin/bash
