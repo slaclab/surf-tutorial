@@ -1,8 +1,8 @@
 # 01-AXI-Lite_register_endpoint
 
 This lab is intended to be the first of many tutorial labs on SURF.
-It will go into more details on the "two-process" coding 
-and other SURF coding standards that the other labs will.
+Unlike the other labs, it will go into more details on the "two-process" coding 
+and other SURF coding standards.
 By the end of this lab, you will be able to understand the following:
 - How to use the SURF AXI-Lite helper functions/procedures
 - How to add custom read/write, read-only, and write-only registers
@@ -19,7 +19,7 @@ Please refer to the AXI-Lite protocol specification for the complete details:
 First, copy the AXI-Lite endpoint template from the `ref_file`
 directory to the `rtl` and rename it on the way.
 ```bash
-cp ref_files/MyAxiLiteEndpoint_blank.vhd rtl/MyAxiLiteEndpoint.vhd
+cp ref_files/MyAxiLiteEndpoint_start.vhd rtl/MyAxiLiteEndpoint.vhd
 ```
 Please open the `rtl/MyAxiLiteEndpoint.vhd` file in 
 a text editor (e.g. vim, nano, emacs, etc) at the same time as reading this README.md
@@ -37,8 +37,9 @@ use surf.AxiLitePkg.all;
 library ruckus;
 use ruckus.BuildInfoPkg.all;
 ```
-Both the Standard Logic Real Time Logic Package (StdRtlPkg) and AXI-Lite 
-Package (AxiLitePkg) are included from SURF.  We also include Build 
+Both the [Standard Logic Real Time Logic Package (StdRtlPkg)](https://github.com/slaclab/surf/blob/v2.47.1/base/general/rtl/StdRtlPkg.vhd)
+and [AXI-Lite Package (AxiLitePkg)](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd)
+are included from SURF.  We also include Build 
 Information Package (BuildInfoPkg) from ruckus, which is an auto-generated
 VHDL file that contains useful information about the build at the time 
 of the build.
@@ -68,19 +69,22 @@ Primary purpose is to help with visually looking at simulation waveforms.
 * `axilClk`: AXI-Lite clock 
 * `axilRst`: AXI-Lite reset (active HIGH)
 * `axilReadMaster`: AXI-Lite read master input. 
-`AxiLiteReadMasterType` record type contains the following signals (defined in AxiLitePkg):
+[`AxiLiteReadMasterType` record type](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd#L56)
+contains the following signals (defined in [AxiLitePkg](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd)):
   - araddr  : slv(31 downto 0);
   - arprot  : slv(2 downto 0);
   - arvalid : sl;
   - rready  : sl;
 * `axilReadSlave`: AXI-Lite read slave output. 
-`AxiLiteReadSlaveType` record type contains the following signals (defined in AxiLitePkg):
+[`AxiLiteReadSlaveType` record type](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd#L82)
+contains the following signals (defined in [AxiLitePkg](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd)):
   - arready : sl;
   - rdata   : slv(31 downto 0);
   - rresp   : slv(1 downto 0);
   - rvalid  : sl;
 * `axilWriteMaster`: AXI-Lite write master input. 
-`AxiLiteWriteMasterType` record type contains the following signals (defined in AxiLitePkg):
+[`AxiLiteWriteMasterType` record type](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd#L117)
+contains the following signals (defined in [AxiLitePkg](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd)):
   - awaddr  : slv(31 downto 0);
   - awprot  : slv(2 downto 0);
   - awvalid : sl;
@@ -89,7 +93,8 @@ Primary purpose is to help with visually looking at simulation waveforms.
   - wvalid  : sl;
   - bready  : sl;
 * `axilWriteSlave`: AXI-Lite write slave output. 
-`AxiLiteWriteSlaveType` record type contains the following signals (defined in AxiLitePkg):
+[`AxiLiteWriteSlaveType` record type](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd#L150)
+contains the following signals (defined in [AxiLitePkg](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd)):
   - awready : sl;
   - wready  : sl;
   - bresp   : slv(1 downto 0);
@@ -101,6 +106,8 @@ Primary purpose is to help with visually looking at simulation waveforms.
 
 This MyAxiLiteEndpoint has the following signals, types, constants:
 ```vhdl
+   constant BUILD_INFO_DECODED_C : BuildInfoRetType := toBuildInfo(BUILD_INFO_C);
+
    type RegType is record
       scratchPad     : slv(31 downto 0);
       cnt            : slv(31 downto 0);
@@ -123,7 +130,11 @@ This MyAxiLiteEndpoint has the following signals, types, constants:
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
 ```
-* `RegType`: record type defination for the registers in the “two-process” coding style
+* `BUILD_INFO_DECODED_C`: [decoded build information](https://github.com/slaclab/surf/blob/v2.47.1/base/general/rtl/StdRtlPkg.vhd#L1459-L1469) that contains the following:
+  - `buildString`: ASCII string of useful build information at the time of the build that's packed into 64 by 32-bit std_logic_vectors
+  - `fwVersion`: defined by `PRJ_VERSION` environmental variable in the local Makefile
+  - `gitHash`: 160-bit value of the git repo's hash at the time of the build
+* `RegType`: record type definition for the registers in the “two-process” coding style
   - `scratchPad`: 32-bit general purpose read/write register
   - `cnt`: 32-bit counter that's controlled by startCnt/stopCnt
   - `enableCnt`: Enable counter flag
@@ -155,7 +166,8 @@ At the very end of the process, there is a `rin <= v;`, which is feed back to th
 
 Anywhere in the code that starts with a `v.` means it is a "variable" and `r.` means it is a "registers".
 
-The `axilEp` variable contains all the information used to detect read/write transaction and returning the transaction response.
+The `axilEp` variable is [AxiLiteEndpointType](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd#L193)
+and contains all the information used to detect read/write transaction and returning the transaction response.
 
 <!--- ########################################################################################### -->
 
@@ -169,7 +181,9 @@ Next, check if the `startCnt` register is active.  If active, then enable the `e
 Finally, check if the `stopCnt` register is active.  If active, then disable the `enableCnt` variable.
 
 If both the `startCnt` and `stopCnt` registers are active at the same time, 
-the `enableCnt` variable would be set to zero because `stopCnt` "if statement" happens later in the combinatorial process.
+the `enableCnt` variable would be set to zero because `stopCnt` "if statement" 
+happens later in the combinatorial process.
+
 ```vhdl
       --------------------
       -- Reset the strobes
@@ -203,14 +217,18 @@ the `enableCnt` variable would be set to zero because `stopCnt` "if statement" h
 <!--- ########################################################################################### -->
 
 ### AXI-Lite Transaction
-The `axiSlaveWaitTxn()` procedure (defined in AxiLitePkg) determines which type of transaction
-if any exists.  
+The [`axiSlaveWaitTxn()` procedure](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd#L731)
+(defined in [AxiLitePkg](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd)) 
+determines which type of transaction if any exists.  
 
 "Placeholder for your code will go here" is where we will put the register mapping later in the lab.
 
-The `axiSlaveDefault()` procedure is used to closeout the transaction.  The last argument in this 
-procedure is what the AXI-Lite responds should be to "unmap" register space.  
-The `AXI_RESP_DECERR_C` is used for this "unmapped" transaction response.
+The [`axiSlaveDefault()` procedure](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd#L1005)
+(defined in [AxiLitePkg](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd)) 
+is used to closeout the transaction.  The last argument in this 
+procedure is what the AXI-Lite responds should be to "unmapped" register space.  
+The [`AXI_RESP_DECERR_C`](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd#L46)
+is used for this "unmapped" transaction response.
 
 Note: It is possible in AXI-Lite to have both a read and write transaction to happen
 at the same time. These helper function support simultaneous write/read.  
@@ -255,9 +273,65 @@ with a `TPD_G` delay for simulation.
 
 ## Adding custom AXI-Lite registers using SURF procedures
 
-There are going to be two AXI-Lite procedures used:
+There are going to be two AXI-Lite procedures heavily used in this lab:
 * `axiSlaveRegisterR()`: Used for mapping "read-only" registers
 * `axiSlaveRegister ()`: Used for mapping "read/write" or "write-only" registers
+
+There are axiSlaveRegisterR() is function overload for `sl`, `slv`, or slv32Array (special case)
+in the [AxiLitePkg](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd)):
+
+```vhdl
+   procedure axiSlaveRegisterR (
+      variable ep : inout AxiLiteEndpointType;
+      addr        : in    slv;
+      offset      : in    integer;
+      reg         : in    sl);
+      
+   procedure axiSlaveRegisterR (
+      variable ep : inout AxiLiteEndpointType;
+      addr        : in    slv;
+      offset      : in    integer;
+      reg         : in    slv);
+
+   procedure axiSlaveRegisterR (
+      variable ep : inout AxiLiteEndpointType;
+      addr        : in    slv;
+      regs        : in    slv32Array);      
+```
+where ...
+- `ep` is the `axilEp` variable in our combinatorial process
+- `addr` is the address offset (in units of bytes)
+- `offset` is the bit offset (in units of bits)
+- `reg` is the `sl` or `slv` value being read
+- `regs` is the array of 32-bit registers being read
+
+There are axiSlaveRegister() is function overload for `sl`, `slv`, or slv32Array (special case)
+in the [AxiLitePkg](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd)):
+
+```vhdl
+   procedure axiSlaveRegister (
+      variable ep : inout AxiLiteEndpointType;
+      addr        : in    slv;
+      offset      : in    integer;
+      reg         : inout sl);
+
+   procedure axiSlaveRegister (
+      variable ep : inout AxiLiteEndpointType;
+      addr        : in    slv;
+      offset      : in    integer;
+      reg         : inout slv);
+     
+   procedure axiSlaveRegister (
+      variable ep : inout AxiLiteEndpointType;
+      addr        : in    slv;
+      regs        : inout slv32Array);     
+```
+where ...
+- `ep` is the `axilEp` variable in our combinatorial process
+- `addr` is the address offset (in units of bytes)
+- `offset` is the bit offset (in units of bits)
+- `reg` is the `sl` or `slv` value being written or read
+- `regs` is the array of 32-bit registers being written or read
 
 <!--- ########################################################################################### -->
 
@@ -265,7 +339,7 @@ There are going to be two AXI-Lite procedures used:
 
 Replace `-- Placeholder for your code will go here` line with the following:
 ```vhdl
-      axiSlaveRegisterR(axilEp, x"000", BUILD_INFO_DECODED_C.fwVersion);
+      axiSlaveRegisterR(axilEp, x"000", 0, BUILD_INFO_DECODED_C.fwVersion);
 ```
 `BUILD_INFO_DECODED_C.fwVersion` is defined in the BuildInfoPkg package and
 will equal the `PRJ_VERSION` environmental variable in the local Makefile.  
@@ -279,6 +353,8 @@ Note: The axiSlaveRegisterR()/axiSlaveRegister() automatically determines the wi
 of the address argument and will use the `std_match` function, which is why the `-`
 character defined in the address description above. This means the "absolute" address 
 does not need to be defined at the end point (only the lower address decoding bits).
+Using relative address with axiSlaveRegisterR()/axiSlaveRegister() enables the code
+to be reusable for different device address offsets.
 
 <!--- ########################################################################################### -->
 
@@ -286,7 +362,7 @@ does not need to be defined at the end point (only the lower address decoding bi
 
 Next, add the following register to the "Mapping read/write registers" section:
 ```vhdl
-      axiSlaveRegister (axilEp, x"004", v.scratchPad);
+      axiSlaveRegister (axilEp, x"004", 0, v.scratchPad);
 ```
 `scratchPad` is a 32-bit general purpose read/write register.  Notice how we are
 using the `v.scratchPad` variable (instead of `r.scratchPad` register) to set
@@ -295,9 +371,9 @@ address `0x----_-004` is  detected, a read (or write) transaction on
 the `scratchPad` will occur.
 
 Note: The address is in units of bytes.  AXI-Lite is a 32-bit transaction with the
-`wstrb` metadata field to do byte level transactions.  We recommend using 32-bit
-word strides (4 bytes) for mapping the addresses because it happens with mapping 
-the registers from firmware to software.
+`wstrb` metadata field to do byte level `write` transactions.  We recommend using 32-bit
+word strides (4 bytes) for mapping the addresses because it is more human readable 
+and helps with mapping the registers from firmware to software.
 
 <!--- ########################################################################################### -->
 
@@ -305,7 +381,7 @@ the registers from firmware to software.
 
 Next, add the following register to the "Mapping read/write registers" section:
 ```vhdl
-      axiSlaveRegisterR(axilEp, x"008", r.cnt);
+      axiSlaveRegisterR(axilEp, x"008", 0, r.cnt);
 ```
 `cnt` is 32-bit counter that's controlled by startCnt/stopCnt. Notice how we are
 using the `r.cnt` register (instead of `v.cnt` variable) to get
@@ -327,9 +403,10 @@ Next, add the following register to the "Mapping read/write registers" section:
 ```
 `startCnt` and `stopCnt` are used to start and stop the counter. These are 
 "write-only" registers because their values changed externally from the AXI-Lite
-interface.  We are mapping two registers on the same AXI-Lite write address. The 
+interface in the "reset strobes" logic at the very beginning of the combinatorial process.
+We are mapping two registers on the same AXI-Lite write address in this example. The 
 3rd argument (default=0) is the bitoffset.  The bitoffset is being explicitly set
-to define where in the 32-bit `wdata` that maps to the registers. 
+to define where in the 32-bit data that maps to the registers. 
 
 Note: If a read transaction happens at this write-only register offset, the `AXI_RESP_DECERR_C`
 will be the read transaction responds. 
@@ -340,10 +417,10 @@ will be the read transaction responds.
 
 Next, add the following register to the "Mapping read/write registers" section:
 ```vhdl
-      axiSlaveRegisterR(axilEp, x"011", r.enableCnt);
+      axiSlaveRegisterR(axilEp, x"011", 0, r.enableCnt);
 ```
 `enableCnt` is the enable counter flag. This time we are mapping to a 
-non-4 byte word alignment address offset (0x011).  Non-4 byte word alignment is
+`non-4 byte word aligned` address offset (0x011).  Non-4 byte word alignment is
 supported by axiSlaveRegister()/axiSlaveRegisterR().  This mapping will result in 
 the same behavior as if we mapped to 0x010 address offset with a 8 bitoffset. 
 
@@ -353,7 +430,7 @@ the same behavior as if we mapped to 0x010 address offset with a 8 bitoffset.
 
 Next, add the following register to the "Mapping read/write registers" section:
 ```vhdl
-      axiSlaveRegisterR(axilEp, x"100", BUILD_INFO_DECODED_C.gitHash);
+      axiSlaveRegisterR(axilEp, x"100", 0, BUILD_INFO_DECODED_C.gitHash);
 ```
 `BUILD_INFO_DECODED_C.gitHash` is a 160-bit value of the git repo's hash at the time of the 
 build.  It is auto-generated in the BuildInfoPkg package. 
@@ -385,7 +462,7 @@ transactions to get (or set) the value.
 ### Why the `rtl/MyAxiLiteEndpointWrapper.vhd`?
 
 cocoTB's AXI extension package does NOT support record types for the AXI interface between
-the firmware and the cocoTB simulation. This is a similar issue with AMD/Xilinx IP Integrator.
+the firmware and the cocoTB simulation. This is a same issue with AMD/Xilinx IP Integrator.
 Both tool only accept `std_logic` (sl) and `std_logic_vector` (slv) port types. The work 
 around for both tools is to use a wrapper that includes a SURF module that translates the 
 AXI record types to `std_logic` (sl) and `std_logic_vector` (slv).  For this lab we will 
@@ -487,7 +564,7 @@ end mapping;
 
 ### How to run the cocoTB testing script
 
-Use the Makefile + ruckus + GHDL to collect all the source code via ruckus.tcl for cocoTB:
+Use the Makefile + ruckus + GHDL to collect all the source code via ruckus.tcl for cocoTB simulation:
 ```bash
 make
 ```
@@ -495,6 +572,62 @@ make
 Next, run the cocoTB python script and grep for the CUSTOM logging prints
 ```bash
 pytest -rP tests/test_MyAxiLiteEndpointWrapper.py  | grep CUSTOM
+```
+
+In the test_MyAxiLiteEndpointWrapper.py, the following code is used to interact with the AXI-Lite endpoint:
+
+```python
+    # Get the FpgaVersion register
+    rdTxn = await tb.axil.read(address=0x000, length=4)
+    assert rdTxn.resp == AxiResp.OKAY
+    tb.log.custom( f'FpgaVersion={rdDataToStr(rdTxn.data)}' )
+
+    # Test the scratchpad write/read operations
+    rdTxn = await tb.axil.read(address=0x004, length=4)
+    tb.log.custom( f'scratchpad(init value)={rdDataToStr(rdTxn.data)}' )
+    testWord = int(random.getrandbits(32)).to_bytes(4, "little")
+    wrTxn = await tb.axil.write(address=0x004, data=testWord)
+    assert wrTxn.resp == AxiResp.OKAY
+    rdTxn = await tb.axil.read(address=0x004, length=4)
+    assert rdTxn.resp == AxiResp.OKAY
+    assert rdTxn.data == testWord
+    tb.log.custom( f'Passed the scratchpad testing' )
+
+    # Check the default r.cnt and r.enableCnt values
+    rdTxn = await tb.axil.read(address=0x008, length=4)
+    tb.log.custom( f'cnt(init value)={rdDataToStr(rdTxn.data)}' )
+    rdTxn = await tb.axil.read(address=0x011, length=1)
+    tb.log.custom( f'enableCnt(init value)={rdDataToStr(rdTxn.data)}' )
+
+    # Start the counter and wait 100 cycles
+    wrTxn = await tb.axil.write(address=0x00C, data=int(0x1).to_bytes(4, "little"))
+    assert wrTxn.resp == AxiResp.OKAY
+    await tb.add_delay(100)
+
+    # Measure r.cnt and r.enableCnt values
+    rdTxn = await tb.axil.read(address=0x008, length=4)
+    tb.log.custom( f'cnt(running)={rdDataToStr(rdTxn.data)}' )
+    rdTxn = await tb.axil.read(address=0x011, length=1)
+    tb.log.custom( f'enableCnt(running)={rdDataToStr(rdTxn.data)}' )
+
+    # Stop the counter and check final count value and that it actually stopped
+    wrTxn = await tb.axil.write(address=0x00C, data=int(0x2).to_bytes(4, "little"))
+    assert wrTxn.resp == AxiResp.OKAY
+    rdTxn = await tb.axil.read(address=0x008, length=4)
+    tb.log.custom( f'cnt(stopped)={rdDataToStr(rdTxn.data)}' )
+    rdTxn = await tb.axil.read(address=0x011, length=1)
+    tb.log.custom( f'enableCnt(stopped)={rdDataToStr(rdTxn.data)}' )
+
+    # Get the Git Hash
+    rdTxn = await tb.axil.read(address=0x100, length=20)
+    assert rdTxn.resp == AxiResp.OKAY
+    tb.log.custom( f'gitHash={rdDataToStr(rdTxn.data)}' )
+
+    # Get the BuildStamp string
+    rdTxn = await tb.axil.read(address=0x200, length=256)
+    assert rdTxn.resp == AxiResp.OKAY
+    buildString = repr(rdTxn.data.decode('utf-8').rstrip('\x00'))
+    tb.log.custom( f'buildString={buildString}' )
 ```
 
 <!--- ########################################################################################### -->
@@ -506,7 +639,7 @@ into the build output path.  You can use `gtkwave` to display these simulation t
 ```bash
 gtkwave build/MyAxiLiteEndpointWrapper/MyAxiLiteEndpointWrapper.ghw
 ```
-<img src="ref_files/gtkwave.png" width="200">
+<img src="ref_files/gtkwave.png" width="500">
 
 <!--- ########################################################################################### -->
 
