@@ -127,7 +127,7 @@ This MyAxiLiteEndpoint has the following signals, types, constants:
 
 ## Basics of AXI stream Flow Control
 
-All information below are copied from `Section 2.2.1 Handshake process` from the
+All information below is copied from `Section 2.2.1 Handshake process` from the
 [AXI stream protocol specification](https://documentation-service.arm.com/static/642583d7314e245d086bc8c9?token=)
 
 The `TVALID` and `TREADY` handshake determines when information is passed across the
@@ -148,5 +148,89 @@ The following sections give examples of the handshake sequence.
 <img src="ref_files/axis_fig2-1.png" width="1000">
 <img src="ref_files/axis_fig2-2.png" width="1000">
 <img src="ref_files/axis_fig2-3.png" width="1000">
+
+<!--- ########################################################################################### -->
+
+## Adding Custom code to the Combinatorial Process
+
+At this point of the lab, we will now replace the "Placeholder" parts of the code with the custom
+code.  This addition is broken apart into three sections to help with teach out to use the SURF
+AXI stream frame:
+- Flow Control
+- Process the stream
+- Outputs
+
+<!--- ########################################################################################### -->
+
+### Flow Control
+
+Replace `-- Flow Control: Placeholder for your code will go here` with the following code:
+```vhdl
+      -- Reset the inbound tReady back to zero
+      v.sAxisSlave.tReady := '0';
+```
+At the start of each clock cycle, we reset the sAxisSlave.tReady variable back to zero.
+
+Next, add the following code to the "Flow Control" section:
+```vhdl
+      -- Check if the outbound tReady was active
+      if (mAxisSlave.tReady = '1') then
+
+         -- Reset the outbound metadata
+         v.mAxisMaster.tValid := '0';
+
+      end if;
+```
+This code is used to deassert the mAxisMaster.tValid once the mAxisSlave.tReady is asserted.
+
+<!--- ########################################################################################### -->
+
+### Process the stream
+
+Replace `-- Stream Process: Placeholder for your code will go here` with the following code:
+```vhdl
+      -- Check if new inbound data and able to move outbound
+      if (sAxisMaster.tValid = '1') and (v.mAxisMaster.tValid = '0') then
+
+         -- Accept the data
+         v.sAxisSlave.tReady := '1';
+
+         -- Move the data
+         v.mAxisMaster := sAxisMaster;
+
+         -- Manipulate the tData bus by adding +1 to the value
+         v.mAxisMaster.tData(TDATA_BIT_WIDTH_C-1 downto 0) := v.mAxisMaster.tData(TDATA_BIT_WIDTH_C-1 downto 0) + 1;
+
+      end if;
+```
+* `if (sAxisMaster.tValid = '1') and (v.mAxisMaster.tValid = '0') then`
+  * This code will check for new inbound data from the sAxisMaster.tValid and the outbound data is ready
+to move the next word.
+  * Please take note how the variable for mAxisMaster.tValid (not registered) is being
+used here.  If we use the registered (r.) for mAxisMaster.tValid, then there would always be at least
+1 clock cycle gap between the mAxisMaster.tValid, which would result in reduced performance.
+By using the variable for mAxisMaster.tValid, we can be capable of accepting sAxisMaster on every clock
+cycle with no gaps in tValid.
+* `v.sAxisSlave.tReady := '1';`
+  * This will acknowledge the sAxisMaster information was acceptable so the upstream source can either
+deassert sAxisMaster.tValid or re-assert sAxisMaster.tValid with new information on the next clock cycle.
+* `v.mAxisMaster := sAxisMaster;`
+  * This will make an exact copy of the sAxisMaster to the variable of mAxisMaster.
+* `v.mAxisMaster.tData(TDATA_BIT_WIDTH_C-1 downto 0) := v.mAxisMaster.tData(TDATA_BIT_WIDTH_C-1 downto 0) + 1;`
+  * Using the variable of mAxisMaster.tData, this will increment the value of tData within the valid range of tData.
+
+<!--- ########################################################################################### -->
+
+### Outputs
+```vhdl
+      sAxisSlave  <= v.sAxisSlave;  -- Variable output
+      mAxisMaster <= r.mAxisMaster; -- Registered output
+```
+For the `mAxisMaster` we are using the registered value on the output port.
+However, for the `sAxisSlave` we are using the variable value (instead of registered).
+The variable output value is required because of the 0 cycle latency requirement between tValid/tReady handshaking.
+This is commonly known "critical path" when making timing in Place and Route (PnR). SURF framework
+has a module called [AxiStreamPipeline](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-stream/rtl/AxiStreamPipeline.vhd)
+      to help with breaking apart that critical path with register with a slight increase in pipeline delay.
 
 <!--- ########################################################################################### -->
