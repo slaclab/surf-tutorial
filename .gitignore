@@ -32,6 +32,7 @@ ehthumbs.db
 Thumps.db
 *.swp
 build.info
+.coverage
 
 # Build directories 
 build*
