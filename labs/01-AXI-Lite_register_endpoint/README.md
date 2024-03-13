@@ -590,6 +590,22 @@ Next, run the cocoTB python script and grep for the CUSTOM logging prints
 pytest -rP tests/test_MyAxiLiteEndpointWrapper.py  | grep CUSTOM
 ```
 
+Here's an example of what the output of that `pytest` command would look like:
+```bash
+$ pytest -rP tests/test_MyAxiLiteEndpointWrapper.py  | grep CUSTOM
+INFO     cocotb:simulator.py:305     90.00ns CUSTOM   cocotb.tb                          FpgaVersion=0x1020304
+INFO     cocotb:simulator.py:305    130.00ns CUSTOM   cocotb.tb                          scratchpad(init value)=0xdeadbeef
+INFO     cocotb:simulator.py:305    210.00ns CUSTOM   cocotb.tb                          Passed the scratchpad testing
+INFO     cocotb:simulator.py:305    250.00ns CUSTOM   cocotb.tb                          cnt(init value)=0x0
+INFO     cocotb:simulator.py:305    290.00ns CUSTOM   cocotb.tb                          enableCnt(init value)=0x0
+INFO     cocotb:simulator.py:305   1370.00ns CUSTOM   cocotb.tb                          cnt(running)=0x66
+INFO     cocotb:simulator.py:305   1410.00ns CUSTOM   cocotb.tb                          enableCnt(running)=0x1
+INFO     cocotb:simulator.py:305   1490.00ns CUSTOM   cocotb.tb                          cnt(stopped)=0x70
+INFO     cocotb:simulator.py:305   1530.00ns CUSTOM   cocotb.tb                          enableCnt(stopped)=0x0
+INFO     cocotb:simulator.py:305   1650.00ns CUSTOM   cocotb.tb                          gitHash=0xb9b6a2350e1715d1c4b980301a291864d674a581
+INFO     cocotb:simulator.py:305   2950.00ns CUSTOM   cocotb.tb                          buildString=': GHDL 1.0.0 (Ubuntu 1.0.0+dfsg-6) [Dunoon edition], rdsrv409 (Linux-6.5.0-21-generic-x86_64-with-glibc2.35), Built Wed Mar 13 12:05:38 PM PDT 2024 by ruckman'
+```
+
 In the test_MyAxiLiteEndpointWrapper.py, the following code is used to interact with the AXI-Lite endpoint:
 
 ```python
