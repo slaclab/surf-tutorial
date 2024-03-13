@@ -655,7 +655,7 @@ In the test_MyAxiLiteEndpointWrapper.py, the following code is used to interact 
     # Check the default r.cnt and r.enableCnt values
     rdTxn = await tb.axil.read(address=0x008, length=4)
     tb.log.custom( f'cnt(init value)={rdDataToStr(rdTxn.data)}' )
-    rdTxn = await tb.axil.read(address=0x00C, length=1)
+    rdTxn = await tb.axil.read(address=0x011, length=1)
     tb.log.custom( f'enableCnt(init value)={rdDataToStr(rdTxn.data)}' )
 
     # Start the counter and wait 100 cycles
@@ -666,18 +666,16 @@ In the test_MyAxiLiteEndpointWrapper.py, the following code is used to interact 
     # Measure r.cnt and r.enableCnt values
     rdTxn = await tb.axil.read(address=0x008, length=4)
     tb.log.custom( f'cnt(running)={rdDataToStr(rdTxn.data)}' )
-    rdTxn = await tb.axil.read(address=0x00C, length=1)
+    rdTxn = await tb.axil.read(address=0x011, length=1)
     tb.log.custom( f'enableCnt(running)={rdDataToStr(rdTxn.data)}' )
 
-    # Reset the counter and read it again, then stop the counter
-    wrTxn = await tb.axil.write(address=0x010, data=int(0x1).to_bytes(4, "little"))
+    # Stop the counter and check final count value and that it actually stopped
+    wrTxn = await tb.axil.write(address=0x00C, data=int(0x2).to_bytes(4, "little"))
     assert wrTxn.resp == AxiResp.OKAY
     rdTxn = await tb.axil.read(address=0x008, length=4)
-    tb.log.custom( f'cnt(reset)={rdDataToStr(rdTxn.data)}' )
-    rdTxn = await tb.axil.read(address=0x00C, length=1)
-    tb.log.custom( f'enableCnt(running)={rdDataToStr(rdTxn.data)}' )
-    wrTxn = await tb.axil.write(address=0x00C, data=int(0x0).to_bytes(4, "little"))
-    assert wrTxn.resp == AxiResp.OKAY
+    tb.log.custom( f'cnt(stopped)={rdDataToStr(rdTxn.data)}' )
+    rdTxn = await tb.axil.read(address=0x011, length=1)
+    tb.log.custom( f'enableCnt(stopped)={rdDataToStr(rdTxn.data)}' )
 
     # Get the Git Hash
     rdTxn = await tb.axil.read(address=0x100, length=20)
