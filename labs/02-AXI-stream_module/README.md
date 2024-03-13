@@ -153,9 +153,9 @@ The following sections give examples of the handshake sequence.
 
 ## Adding Custom code to the Combinatorial Process
 
-At this point of the lab, we will now replace the "Placeholder" parts of the code with the custom
-code.  This addition is broken apart into three sections to help with teach out to use the SURF
-AXI stream frame:
+At this point in the lab, we will replace the "Placeholder" sections of the code
+with custom code. This addition is divided into three sections to facilitate learning
+how to use the SURF AXI stream framework:
 - Flow Control
 - Process the stream
 - Outputs
@@ -169,7 +169,7 @@ Replace `-- Flow Control: Placeholder for your code will go here` with the follo
       -- Reset the inbound tReady back to zero
       v.sAxisSlave.tReady := '0';
 ```
-At the start of each clock cycle, we reset the sAxisSlave.tReady variable back to zero.
+After the rising edge of each clock cycle, we reset the sAxisSlave.tReady variable back to zero.
 
 Next, add the following code to the "Flow Control" section:
 ```vhdl
@@ -427,7 +427,7 @@ INFO     cocotb:simulator.py:305  13170.00ns CUSTOM   cocotb.myaxistreammodulewr
 INFO     cocotb:simulator.py:305  19000.00ns CUSTOM   cocotb.myaxistreammodulewrapper    .... passed test
 ```
 
-In the test_MyAxiStreamModuleWrapper.py, the following code is used to interact with the AXI-Lite endpoint:
+In the test_MyAxiStreamModuleWrapper.py, the following code is used to interact with the AXI stream module:
 
 ```python
 async def run_test(dut, payload_lengths=None, payload_data=None, idle_inserter=None, backpressure_inserter=None):
@@ -485,9 +485,9 @@ gtkwave build/MyAxiStreamModuleWrapper/MyAxiStreamModuleWrapper.ghw
 
 ## Explore Time!
 
-At this point, we have added all the custom AXI-Lite registers for the
+At this point, we have added all the custom AXI stream module code for the
 example cocoTB testbed python provided in the lab.  If you have extra
-time in the lab, please play around with adding/modifying the firmware
-registers and testing them in the cocoTB software simulator.
+time in the lab, please play around with modifying the firmware/software
+and testing them in the cocoTB software simulator.
 
 <!--- ########################################################################################### -->

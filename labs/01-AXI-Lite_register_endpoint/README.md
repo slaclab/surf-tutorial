@@ -160,7 +160,7 @@ This gives `v` the current output value of each register.
 The `v` variable is manipulated through the combinatorial process.
 At the very end of the process, there is a `rin <= v;`, which is feed back to the register process.
 This means that every register will default to it's previous value each clock cycle, unless
-directed otherwise in the combinatoral process logic. This is quite powerful, as it elimanates 
+directed otherwise in the combinatoral process logic. This is quite powerful, as it elimanates
 the possiblility of partially assigned registers inferring latches in synthesis. It also often
 simplifies the application logic.
 
@@ -178,7 +178,7 @@ of stobing the register for just 1 clock cycle when it is written by the AXI-Lit
 The counter will check if the `enableCnt` register is active.  If active, then increment the counter.
 
 Next it will check if the `resetCnt` register is `'1'`. If so it will reset the counter to zero.
-Note that this overrides any counter increment performed above. By placing this logic "below", 
+Note that this overrides any counter increment performed above. By placing this logic "below",
 we have effectivly specified that `resetCnt` takes precedence over `enableCnt`.
 
 
@@ -248,7 +248,7 @@ at the same time. These helper function support simultaneous write/read.
 
 #### Synchronous Reset
 At the bottom of the combinatoral process, a synchronous reset of the entire module is
-encoded. This will override any other assignment to `v` from above, and effectively return all module 
+encoded. This will override any other assignment to `v` from above, and effectively return all module
 registers to their initial value on the next clock cycle.
 
 ```vhdl
@@ -404,8 +404,8 @@ Next, add the following register to the "Mapping read/write registers" section:
 ```vhdl
       axiSlaveRegister(axilEp, x"00C", 0, v.enableCnt);
 ```
-`enableCnt` is the enable counter flag. When encoded this way, the register will retain the 
-value written to it from the AXI-bus on subsequent clock cycles. 
+`enableCnt` is the enable counter flag. When encoded this way, the register will retain the
+value written to it from the AXI-bus on subsequent clock cycles.
 
 
 <!--- ########################################################################################### -->
@@ -418,8 +418,8 @@ Next, add the following register to the "Mapping read/write registers" section:
 ```
 `resetCnt` is used to reset the counter to zero. Recall the `v.resetCnt := '0'` statement from
 the counter logic above. When coded this way, writing x"010" to '1' via AXI-Lite will override
-the `v.resetCnt := '0'` assignment and cause the `resetCnt` register to pulse high for one 
-clock cycle. We call this a "write-only" register because the write has no effect on the readback 
+the `v.resetCnt := '0'` assignment and cause the `resetCnt` register to pulse high for one
+clock cycle. We call this a "write-only" register because the write has no effect on the readback
 value. Reading x"010 on the AXI-Lite bus will always return 0, because the `resetCnt` register
 will have already returned back to 0.
 
@@ -434,7 +434,7 @@ Next, add the following register to the "Mapping read/write registers" section:
 ```
 `statusA` and `statusB` registers are taken directly from the module inputs. (It is assumed that
 they are synchronous to `axilClk`.) We are mapping two registers on the same AXI-Lite
-address in this example. The 3rd argument is the bitOffset. The bitOffset determines where 
+address in this example. The 3rd argument is the bitOffset. The bitOffset determines where
 in the 32-bit data that the register is mapped.
 
 Note that the statusB register could be equivalenly encoded as
@@ -454,7 +454,7 @@ Next, add the following register to the "Mapping read/write registers" section:
       axiSlaveRegisterR(axilEp, x"100", 0, GIT_HASH_G);
 ```
 
-`GIT_HASH_G` is 160-bit value of the git repo's hash at the time of the build 
+`GIT_HASH_G` is 160-bit value of the git repo's hash at the time of the build
 and is a zero value will be used if the git clone is "dirty".
 axiSlaveRegister()/axiSlaveRegisterR() supports mapping values that are greater
 than 32-bit bits, which will require multiple AXI-Lite read (or write)
@@ -496,8 +496,8 @@ that follow on how to deploy and utilize cocoTB to test the MyAxiLiteEndpointWra
 
 cocoTB's AXI extension package does NOT support record types for the AXI interface between
 the firmware and the cocoTB simulation. This is a same issue as with AMD/Xilinx IP Integrator.
-Both tool only accept `std_logic` (`sl`) and `std_logic_vector` (`slv`) port types. The work-around 
-for both tools is to use a wrapper that translates the AXI record types to `std_logic` (sl) and 
+Both tool only accept `std_logic` (`sl`) and `std_logic_vector` (`slv`) port types. The work-around
+for both tools is to use a wrapper that translates the AXI record types to `std_logic` (sl) and
 `std_logic_vector` (slv).  For this lab we will be using `surf.SlaveAxiLiteIpIntegrator` for translation:
 
 ```vhdl
