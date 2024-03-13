@@ -20,14 +20,12 @@ You can then build and run the docker image with the commands:
 
 ```bash
 # Before the docker environment:
-cd $HOME
-git clone --recursive https://github.com/slaclab/surf-tutorial.git
 cd surf-tutorial/docker
 ./build_docker.sh
 ./run_docker.sh
 
 # In the docker environment:
-cd surf-tutorial/labs
+cd <PATH to GIT clone in home space>/surf-tutorial/labs
 ...
 ...
 ...
