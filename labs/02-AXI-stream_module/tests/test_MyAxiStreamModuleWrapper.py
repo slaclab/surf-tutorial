@@ -25,6 +25,38 @@ import glob
 import os
 import sys
 
+def CalculateExpectedResult(byte_array: bytearray, byteorder: str = 'little') -> bytearray:
+    """
+    Processes an input byte array, converting it into an array of 32-bit integers,
+    increases each integer by 1, then converts back to a byte array of the same length,
+    even if the original array's length is not a multiple of 4.
+
+    Parameters:
+    - byte_array: The input bytearray to be processed.
+    - byteorder: The byte order used for conversion ('big' or 'little').
+
+    Returns:
+    - A bytearray with each 32-bit integer increased by 1, of the same length as the input.
+    """
+    original_length = len(byte_array)
+    # Calculate padding required to make the length a multiple of 4
+    padding_needed = (4 - original_length % 4) % 4
+    padded_byte_array = byte_array + bytearray(padding_needed)
+
+    # Convert byte array into an array of 32-bit integers
+    int_array = [int.from_bytes(padded_byte_array[i:i+4], byteorder) for i in range(0, len(padded_byte_array), 4)]
+
+    # Increase each integer by 1
+    incremented_ints = [x + 1 for x in int_array]
+
+    # Convert the array of incremented 32-bit integers back to a byte array
+    result_byte_array = bytearray()
+    for int_val in incremented_ints:
+        result_byte_array += int_val.to_bytes(4, byteorder)
+
+    # Trim the padding off the final byte array to match the original length
+    return result_byte_array[:original_length]
+
 # Define a new log level
 CUSTOM_LEVEL = 60
 logging.addLevelName(CUSTOM_LEVEL, "CUSTOM")
@@ -114,27 +146,13 @@ async def run_test(dut, payload_lengths=None, payload_data=None, idle_inserter=N
     for test_frame in test_frames:
         rx_frame = await tb.sink.recv()
 
-        ###############################
-        # Calculate the expected result
-        ###############################
-
-        # Step 1: Convert byte array to integer
-        int_value = int.from_bytes(test_frame.tdata, 'little')
-
-        # Step 2: Increment the integer by 1
-        int_value += 1
-
-        # Step 3: Convert back to byte array
-        expected_result = int_value.to_bytes(length=len(test_frame.tdata), byteorder='little')
-
-        # Step 4: Compare the received tdata to SW calculated result
-        assert rx_frame.tdata == expected_result
-
+        assert rx_frame.tdata == CalculateExpectedResult(test_frame.tdata, 'little')
         assert rx_frame.tid == test_frame.tid
         assert rx_frame.tdest == test_frame.tdest
         assert not rx_frame.tuser
 
     assert tb.sink.empty()
+    dut.log.custom( f'.... passed test' )
 
 def cycle_pause():
     return itertools.cycle([1, 1, 1, 0])
