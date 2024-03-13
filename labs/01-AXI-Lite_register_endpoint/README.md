@@ -474,11 +474,10 @@ that follow on how to deploy and utilize cocoTB to test the MyAxiLiteEndpointWra
 ### Why the `rtl/MyAxiLiteEndpointWrapper.vhd`?
 
 cocoTB's AXI extension package does NOT support record types for the AXI interface between
-the firmware and the cocoTB simulation. This is a same issue with AMD/Xilinx IP Integrator.
-Both tool only accept `std_logic` (sl) and `std_logic_vector` (slv) port types. The work
-around for both tools is to use a wrapper that includes a SURF module that translates the
-AXI record types to `std_logic` (sl) and `std_logic_vector` (slv).  For this lab we will
-be using `surf.SlaveAxiLiteIpIntegrator` for translation:
+the firmware and the cocoTB simulation. This is a same issue as with AMD/Xilinx IP Integrator.
+Both tool only accept `std_logic` (`sl`) and `std_logic_vector` (`slv`) port types. The work-around 
+for both tools is to use a wrapper that translates the AXI record types to `std_logic` (sl) and 
+`std_logic_vector` (slv).  For this lab we will be using `surf.SlaveAxiLiteIpIntegrator` for translation:
 
 ```vhdl
 entity MyAxiLiteEndpointWrapper is
