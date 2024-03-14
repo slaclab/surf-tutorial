@@ -1,6 +1,6 @@
 # surf-tutorial
 
-This tutorial is designed for users learning how to use SURF framework
+This tutorial is designed for users learning how to use SURF framework.
 Everything in this tutorial is `open source`!!!
 So there are no "pay barriers" or licensing required to get started.
 
