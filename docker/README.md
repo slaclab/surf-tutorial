@@ -32,6 +32,9 @@ You can then build and run the docker image with the commands:
 
 4. **Start XQuartz**: Before running your Docker container, start XQuartz from your Applications folder.
 
+5. **Open XQuartz**: go to XQuartz -> Preferences, and under the "Security" tab, ensure "Allow connections from network clients" is checked.
+   - Log out and log back in or reboot your machine to ensure the changes take effect.
+
 There's no need to manually add your user to the Docker group or enable the Docker service as in Linux. Docker for Mac handles these aspects automatically.
 
 # How to build and run the docker

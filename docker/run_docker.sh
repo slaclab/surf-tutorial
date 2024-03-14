@@ -3,7 +3,6 @@
 # Check OS using uname
 if [[ "$(uname)" == "Darwin" ]]; then
    # macOS system detected
-   xhost + 127.0.0.1
    DISPLAY='host.docker.internal:0'
 else
    # Assuming Linux if not macOS
