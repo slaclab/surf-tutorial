@@ -32,10 +32,8 @@ GHDLFLAGS := --workdir=$(OUT_DIR) --ieee=synopsys -fexplicit \
 include $(RUCKUS_DIR)/system_shared.mk
 
 # Override build string
-export BUILD_SVR_TYPE := $(shell python3 -m platform)
 export GHDL_VERSION := $(shell ghdl -v 2>&1 | head -n 1)
-export BUILD_STRING := $(PROJECT): $(GHDL_VERSION), $(BUILD_SYS_NAME) \
-                       ($(BUILD_SVR_TYPE)), Built $(BUILD_DATE) by $(BUILD_USER)
+export BUILD_STRING := "$(PROJECT): $(GHDL_VERSION), $(BUILD_SYS_NAME) ($(BUILD_SVR_TYPE)), Built $(BUILD_DATE) by $(BUILD_USER)"
 
 .PHONY: all test src syntax mkdir_build
 
