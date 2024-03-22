@@ -607,12 +607,97 @@ create_bd_cell -type module -reference MyAxiLiteEndpointWrapper MyAxiLiteEndpoin
 
 ### How to run the cocoTB testing script
 
-Use the Makefile + ruckus + GHDL to collect all the source code via ruckus.tcl for cocoTB simulation:
+Run "make". This Makefile will finds all the source code paths via ruckus.tcl for cocoTB simulation.
 ```bash
 make
 ```
 
-Next, run the cocoTB python script and grep for the CUSTOM logging prints
+The `tests/test_MyAxiLiteEndpointWrapper.py` cocotb test script is provided in this lab.
+This cocotb script uses the [cocotbext-axi library](https://pypi.org/project/cocotbext-axi/),
+which provides a cocotb API for communicating with the firmware via AXI, AXI-Lite, and AXI-stream interfaces.
+
+In `test_MyAxiLiteEndpointWrapper.py`, the first test operation performed by the code is to print the `FpgaVersion`,
+which is defined in the Makefile by the `PRJ_VERSION` environmental variable.
+`assert rdTxn.resp == AxiResp.OKAY` will stop the simulation if there is a error code in the AXI-Lite transaction responds.
+```python
+# Get the FpgaVersion register
+rdTxn = await tb.axil.read(address=0x000, length=4)
+assert rdTxn.resp == AxiResp.OKAY
+tb.log.custom(f'FpgaVersion={rdDataToStr(rdTxn.data)}')
+```
+
+Next, it will read the initialized value of the `scratchpad` register and print to the Python log.
+After that, it will write a random value to the `scratchpad` register and perform a read to 
+verify that the random value was written. If the verified random value is correct and 
+there are no AXI-Lite transaction response errors, then the scratchpad testing is considered a pass.
+
+```python
+# Test the scratchpad write/read operations
+rdTxn = await tb.axil.read(address=0x004, length=4)
+tb.log.custom(f'scratchpad (init value)={rdDataToStr(rdTxn.data)}')
+testWord = int(random.getrandbits(32)).to_bytes(4, "little")
+wrTxn = await tb.axil.write(address=0x004, data=testWord)
+assert wrTxn.resp == AxiResp.OKAY
+rdTxn = await tb.axil.read(address=0x004, length=4)
+assert rdTxn.resp == AxiResp.OKAY
+assert rdTxn.data == testWord
+tb.log.custom(f'Passed the scratchpad testing')
+```
+
+Next, the code will check the current values of the counter and the enable flag for that counter.
+It will enable the counter via the AXI-Lite interface and wait for 100 clock cycles.
+After the 100 clock cycles, the code will read and print the current values of the counter and the enable flag.
+Finally, the counter will be disabled, and the code will read and print the current values of the counter and the enable flag.
+```python
+# Check the default r.cnt and r.enableCnt values
+rdTxn = await tb.axil.read(address=0x008, length=4)
+tb.log.custom( f'cnt(init value)={rdDataToStr(rdTxn.data)}' )
+rdTxn = await tb.axil.read(address=0x011, length=1)
+tb.log.custom( f'enableCnt(init value)={rdDataToStr(rdTxn.data)}' )
+
+# Start the counter and wait 100 cycles
+wrTxn = await tb.axil.write(address=0x00C, data=int(0x1).to_bytes(4, "little"))
+assert wrTxn.resp == AxiResp.OKAY
+await tb.add_delay(100)
+
+# Measure r.cnt and r.enableCnt values
+rdTxn = await tb.axil.read(address=0x008, length=4)
+tb.log.custom( f'cnt(running)={rdDataToStr(rdTxn.data)}' )
+rdTxn = await tb.axil.read(address=0x011, length=1)
+tb.log.custom( f'enableCnt(running)={rdDataToStr(rdTxn.data)}' )
+
+# Stop the counter and check final count value and that it actually stopped
+wrTxn = await tb.axil.write(address=0x00C, data=int(0x2).to_bytes(4, "little"))
+assert wrTxn.resp == AxiResp.OKAY
+rdTxn = await tb.axil.read(address=0x008, length=4)
+tb.log.custom( f'cnt(stopped)={rdDataToStr(rdTxn.data)}' )
+rdTxn = await tb.axil.read(address=0x011, length=1)
+tb.log.custom( f'enableCnt(stopped)={rdDataToStr(rdTxn.data)}' )
+```
+
+Next, the code will read and print the Git hash.
+This Git hash represents the current hash of your surf-tutorial Git clone.
+If your Git clone is "dirty" (contains uncommitted code),
+this value will be set to zero to indicate to the user that the firmware code was in a "dirty state."
+Unlike the previous code, we are accessing `length=20`, which is 20 bytes (160 bits).
+```python
+# Get the Git Hash
+rdTxn = await tb.axil.read(address=0x100, length=20)
+assert rdTxn.resp == AxiResp.OKAY
+tb.log.custom( f'gitHash={rdDataToStr(rdTxn.data)}' )
+```
+
+Finally, the code will read and print the "build string",
+which is defined in the `labs/shared_build_config.mk` by the `BUILD_STRING` environmental variable.
+```python
+# Get the BuildStamp string
+rdTxn = await tb.axil.read(address=0x200, length=256)
+assert rdTxn.resp == AxiResp.OKAY
+buildString = repr(rdTxn.data.decode('utf-8').rstrip('\x00'))
+tb.log.custom( f'buildString={buildString}' )
+```
+
+Now, run the cocoTB python script and grep for the CUSTOM logging prints
 ```bash
 pytest -rP tests/test_MyAxiLiteEndpointWrapper.py  | grep CUSTOM
 ```
@@ -620,73 +705,17 @@ pytest -rP tests/test_MyAxiLiteEndpointWrapper.py  | grep CUSTOM
 Here's an example of what the output of that `pytest` command would look like:
 ```bash
 $ pytest -rP tests/test_MyAxiLiteEndpointWrapper.py  | grep CUSTOM
-INFO     cocotb:simulator.py:305     90.00ns CUSTOM   cocotb.tb                          FpgaVersion=0x1020304
-INFO     cocotb:simulator.py:305    130.00ns CUSTOM   cocotb.tb                          scratchpad(init value)=0xdeadbeef
-INFO     cocotb:simulator.py:305    210.00ns CUSTOM   cocotb.tb                          Passed the scratchpad testing
-INFO     cocotb:simulator.py:305    250.00ns CUSTOM   cocotb.tb                          cnt(init value)=0x0
-INFO     cocotb:simulator.py:305    290.00ns CUSTOM   cocotb.tb                          enableCnt(init value)=0x0
-INFO     cocotb:simulator.py:305   1370.00ns CUSTOM   cocotb.tb                          cnt(running)=0x66
-INFO     cocotb:simulator.py:305   1410.00ns CUSTOM   cocotb.tb                          enableCnt(running)=0x1
-INFO     cocotb:simulator.py:305   1490.00ns CUSTOM   cocotb.tb                          cnt(stopped)=0x70
-INFO     cocotb:simulator.py:305   1530.00ns CUSTOM   cocotb.tb                          enableCnt(stopped)=0x0
-INFO     cocotb:simulator.py:305   1650.00ns CUSTOM   cocotb.tb                          gitHash=0xb9b6a2350e1715d1c4b980301a291864d674a581
-INFO     cocotb:simulator.py:305   2950.00ns CUSTOM   cocotb.tb                          buildString=': GHDL 1.0.0 (Ubuntu 1.0.0+dfsg-6) [Dunoon edition], rdsrv409 (Linux-6.5.0-21-generic-x86_64-with-glibc2.35), Built Wed Mar 13 12:05:38 PM PDT 2024 by ruckman'
-```
-
-In the test_MyAxiLiteEndpointWrapper.py, the following code is used to interact with the AXI-Lite endpoint:
-
-```python
-    # Get the FpgaVersion register
-    rdTxn = await tb.axil.read(address=0x000, length=4)
-    assert rdTxn.resp == AxiResp.OKAY
-    tb.log.custom( f'FpgaVersion={rdDataToStr(rdTxn.data)}' )
-
-    # Test the scratchpad write/read operations
-    rdTxn = await tb.axil.read(address=0x004, length=4)
-    tb.log.custom( f'scratchpad(init value)={rdDataToStr(rdTxn.data)}' )
-    testWord = int(random.getrandbits(32)).to_bytes(4, "little")
-    wrTxn = await tb.axil.write(address=0x004, data=testWord)
-    assert wrTxn.resp == AxiResp.OKAY
-    rdTxn = await tb.axil.read(address=0x004, length=4)
-    assert rdTxn.resp == AxiResp.OKAY
-    assert rdTxn.data == testWord
-    tb.log.custom( f'Passed the scratchpad testing' )
-
-    # Check the default r.cnt and r.enableCnt values
-    rdTxn = await tb.axil.read(address=0x008, length=4)
-    tb.log.custom( f'cnt(init value)={rdDataToStr(rdTxn.data)}' )
-    rdTxn = await tb.axil.read(address=0x011, length=1)
-    tb.log.custom( f'enableCnt(init value)={rdDataToStr(rdTxn.data)}' )
-
-    # Start the counter and wait 100 cycles
-    wrTxn = await tb.axil.write(address=0x00C, data=int(0x1).to_bytes(4, "little"))
-    assert wrTxn.resp == AxiResp.OKAY
-    await tb.add_delay(100)
-
-    # Measure r.cnt and r.enableCnt values
-    rdTxn = await tb.axil.read(address=0x008, length=4)
-    tb.log.custom( f'cnt(running)={rdDataToStr(rdTxn.data)}' )
-    rdTxn = await tb.axil.read(address=0x011, length=1)
-    tb.log.custom( f'enableCnt(running)={rdDataToStr(rdTxn.data)}' )
-
-    # Stop the counter and check final count value and that it actually stopped
-    wrTxn = await tb.axil.write(address=0x00C, data=int(0x2).to_bytes(4, "little"))
-    assert wrTxn.resp == AxiResp.OKAY
-    rdTxn = await tb.axil.read(address=0x008, length=4)
-    tb.log.custom( f'cnt(stopped)={rdDataToStr(rdTxn.data)}' )
-    rdTxn = await tb.axil.read(address=0x011, length=1)
-    tb.log.custom( f'enableCnt(stopped)={rdDataToStr(rdTxn.data)}' )
-
-    # Get the Git Hash
-    rdTxn = await tb.axil.read(address=0x100, length=20)
-    assert rdTxn.resp == AxiResp.OKAY
-    tb.log.custom( f'gitHash={rdDataToStr(rdTxn.data)}' )
-
-    # Get the BuildStamp string
-    rdTxn = await tb.axil.read(address=0x200, length=256)
-    assert rdTxn.resp == AxiResp.OKAY
-    buildString = repr(rdTxn.data.decode('utf-8').rstrip('\x00'))
-    tb.log.custom( f'buildString={buildString}' )
+INFO     cocotb:simulator.py:305     90.00ns CUSTOM   cocotb.tb   FpgaVersion=0x1020304
+INFO     cocotb:simulator.py:305    130.00ns CUSTOM   cocotb.tb   scratchpad(init value)=0xdeadbeef
+INFO     cocotb:simulator.py:305    210.00ns CUSTOM   cocotb.tb   Passed the scratchpad testing
+INFO     cocotb:simulator.py:305    250.00ns CUSTOM   cocotb.tb   cnt(init value)=0x0
+INFO     cocotb:simulator.py:305    290.00ns CUSTOM   cocotb.tb   enableCnt(init value)=0x0
+INFO     cocotb:simulator.py:305   1370.00ns CUSTOM   cocotb.tb   cnt(running)=0x66
+INFO     cocotb:simulator.py:305   1410.00ns CUSTOM   cocotb.tb   enableCnt(running)=0x1
+INFO     cocotb:simulator.py:305   1490.00ns CUSTOM   cocotb.tb   cnt(stopped)=0x70
+INFO     cocotb:simulator.py:305   1530.00ns CUSTOM   cocotb.tb   enableCnt(stopped)=0x0
+INFO     cocotb:simulator.py:305   1650.00ns CUSTOM   cocotb.tb   gitHash=0xdc8635e2bd369a7d8b1260488a2590034836d7d2
+INFO     cocotb:simulator.py:305   2950.00ns CUSTOM   cocotb.tb   buildString='": GHDL 1.0.0 (Ubuntu 1.0.0+dfsg-6) [Dunoon edition], rdsrv409 (Ubuntu 22.04.4 LTS), Built Fri Mar 22 11:39
 ```
 
 <!--- ########################################################################################### -->
