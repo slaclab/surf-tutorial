@@ -217,7 +217,7 @@ deassert sAxisMaster.tValid or re-assert sAxisMaster.tValid with new information
 * `v.mAxisMaster := sAxisMaster;`
   * This will make an exact copy of the sAxisMaster to the variable of mAxisMaster.
 * `v.mAxisMaster.tData(TDATA_BIT_WIDTH_C-1 downto 0) := v.mAxisMaster.tData(TDATA_BIT_WIDTH_C-1 downto 0) + 1;`
-  * Using the variable of mAxisMaster.tData, this will increment the value of tData within the valid range of tData.
+  * Using the variable of mAxisMaster.tData, this will increment the value of tData by 1 within the valid range of tData.
 
 <!--- ########################################################################################### -->
 
@@ -404,31 +404,24 @@ create_bd_cell -type module -reference MyAxiStreamModuleWrapper MyAxiStreamModul
 
 ### How to run the cocoTB testing script
 
-Use the Makefile + ruckus + GHDL to collect all the source code via ruckus.tcl for cocoTB simulation:
+Run "make". This Makefile will finds all the source code paths via ruckus.tcl for cocoTB simulation.
 ```bash
 make
 ```
 
-Next, run the cocoTB python script and grep for the CUSTOM logging prints
-```bash
-pytest -rP tests/test_MyAxiStreamModuleWrapper.py  | grep CUSTOM
-```
+The `tests/test_MyAxiStreamModuleWrapper.py` cocotb test script is provided in this lab.
+This cocotb script uses the [cocotbext-axi library](https://pypi.org/project/cocotbext-axi/),
+which provides a cocotb API for communicating with the firmware via AXI, AXI-Lite, and AXI-stream interfaces.
 
-Here's an example of what the output of that `pytest` command would look like:
-```bash
-$ pytest -rP tests/test_MyAxiStreamModuleWrapper.py  | grep CUSTOM
-INFO     cocotb:simulator.py:305      0.00ns CUSTOM   cocotb.myaxistreammodulewrapper    Test: TDATA_NUM_BYTES=4, idle_inserter=None, backpressure_inserter=None
-INFO     cocotb:simulator.py:305   1510.00ns CUSTOM   cocotb.myaxistreammodulewrapper    .... passed test
-INFO     cocotb:simulator.py:305   1510.00ns CUSTOM   cocotb.myaxistreammodulewrapper    Test: TDATA_NUM_BYTES=4, idle_inserter=None, backpressure_inserter=<function cycle_pause at 0x7fca1abde4d0>
-INFO     cocotb:simulator.py:305   7340.00ns CUSTOM   cocotb.myaxistreammodulewrapper    .... passed test
-INFO     cocotb:simulator.py:305   7340.00ns CUSTOM   cocotb.myaxistreammodulewrapper    Test: TDATA_NUM_BYTES=4, idle_inserter=<function cycle_pause at 0x7fca1abde4d0>, backpressure_inserter=None
-INFO     cocotb:simulator.py:305  13170.00ns CUSTOM   cocotb.myaxistreammodulewrapper    .... passed test
-INFO     cocotb:simulator.py:305  13170.00ns CUSTOM   cocotb.myaxistreammodulewrapper    Test: TDATA_NUM_BYTES=4, idle_inserter=<function cycle_pause at 0x7fca1abde4d0>, backpressure_inserter=<function cycle_pause at 0x7fca1abde4d0>
-INFO     cocotb:simulator.py:305  19000.00ns CUSTOM   cocotb.myaxistreammodulewrapper    .... passed test
-```
+In the `test_MyAxiStreamModuleWrapper.py`, the `run_test()` function will be run with four different combinations of AXI-stream traffic:
+- No IDLEs inserted, no backpressure applied
+- No IDLEs inserted, backpressure applied
+- IDLEs inserted, no backpressure applied
+- IDLEs inserted, backpressure applied
 
-In the test_MyAxiStreamModuleWrapper.py, the following code is used to interact with the AXI stream module:
-
+For each `run_test()`, the code will send a payload of 1 byte and increment the payload size by 1 until it reaches the `payload_lengths()`.
+The `CalculateExpectedResult()` function will compare the received payload with the software-calculated "expected" payload.
+If there is a mismatch between the received and expected payload, the code will raise an exception error and stop the simulation.
 ```python
 async def run_test(dut, payload_lengths=None, payload_data=None, idle_inserter=None, backpressure_inserter=None):
 
@@ -468,6 +461,24 @@ async def run_test(dut, payload_lengths=None, payload_data=None, idle_inserter=N
 
     assert tb.sink.empty()
     dut.log.custom( f'.... passed test' )
+```
+
+Now, run the cocoTB python script and grep for the CUSTOM logging prints
+```bash
+pytest -rP tests/test_MyAxiStreamModuleWrapper.py  | grep CUSTOM
+```
+
+Here's an example of what the output of that `pytest` command would look like:
+```bash
+$ pytest -rP tests/test_MyAxiStreamModuleWrapper.py  | grep CUSTOM
+INFO     cocotb:simulator.py:305      0.00ns CUSTOM   cocotb.myaxistreammodulewrapper    Test: TDATA_NUM_BYTES=4, idle_inserter=None, backpressure_inserter=None
+INFO     cocotb:simulator.py:305   1510.00ns CUSTOM   cocotb.myaxistreammodulewrapper    .... passed test
+INFO     cocotb:simulator.py:305   1510.00ns CUSTOM   cocotb.myaxistreammodulewrapper    Test: TDATA_NUM_BYTES=4, idle_inserter=None, backpressure_inserter=<function cycle_pause at 0x7fca1abde4d0>
+INFO     cocotb:simulator.py:305   7340.00ns CUSTOM   cocotb.myaxistreammodulewrapper    .... passed test
+INFO     cocotb:simulator.py:305   7340.00ns CUSTOM   cocotb.myaxistreammodulewrapper    Test: TDATA_NUM_BYTES=4, idle_inserter=<function cycle_pause at 0x7fca1abde4d0>, backpressure_inserter=None
+INFO     cocotb:simulator.py:305  13170.00ns CUSTOM   cocotb.myaxistreammodulewrapper    .... passed test
+INFO     cocotb:simulator.py:305  13170.00ns CUSTOM   cocotb.myaxistreammodulewrapper    Test: TDATA_NUM_BYTES=4, idle_inserter=<function cycle_pause at 0x7fca1abde4d0>, backpressure_inserter=<function cycle_pause at 0x7fca1abde4d0>
+INFO     cocotb:simulator.py:305  19000.00ns CUSTOM   cocotb.myaxistreammodulewrapper    .... passed test
 ```
 
 <!--- ########################################################################################### -->
