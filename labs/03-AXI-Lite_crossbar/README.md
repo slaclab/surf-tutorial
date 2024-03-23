@@ -1,4 +1,4 @@
-# AXI-Lite_register_endpoint
+# AXI-Lite_crossbar
 
 This lab is an introduction to the SURF's AXI-Lite crossbar.
 By the end of this lab, you will be able to understand the following:
