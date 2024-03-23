@@ -393,9 +393,9 @@ gtkwave build/MyAxiLiteCrossbarWrapper/MyAxiLiteCrossbarWrapper.ghw
 
 ## Explore Time!
 
-At this point, we have added all the custom AXI-Lite registers for the
+At this point, we have added all the custom AXI-Lite crossbar for the
 example cocoTB testbed python provided in the lab.  If you have extra
-time in the lab, please play around with adding/modifying the firmware
-registers and testing them in the cocoTB software simulator.
+time in the lab, please play around with adding/modifying the crossbar 
+firmware and testing them in the cocoTB software simulator.
 
 <!--- ########################################################################################### -->
