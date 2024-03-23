@@ -1,4 +1,4 @@
-# 01-AXI-Lite_register_endpoint
+# AXI-Lite_register_endpoint
 
 This lab is intended to be the first of many tutorial labs on SURF.
 Unlike the other labs, it will go into more details on the "two-process" coding
@@ -627,8 +627,8 @@ tb.log.custom(f'FpgaVersion={rdDataToStr(rdTxn.data)}')
 ```
 
 Next, it will read the initialized value of the `scratchpad` register and print to the Python log.
-After that, it will write a random value to the `scratchpad` register and perform a read to 
-verify that the random value was written. If the verified random value is correct and 
+After that, it will write a random value to the `scratchpad` register and perform a read to
+verify that the random value was written. If the verified random value is correct and
 there are no AXI-Lite transaction response errors, then the scratchpad testing is considered a pass.
 
 ```python

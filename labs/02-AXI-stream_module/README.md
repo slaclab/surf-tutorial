@@ -1,4 +1,4 @@
-# 02-AXI-stream_module
+# AXI-stream_module
 
 This lab is an introduction to the SURF framework for AXI stream.
 By the end of this lab, you will be able to understand the following:
