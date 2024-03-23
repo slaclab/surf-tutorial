@@ -130,12 +130,12 @@ is used when the crossbar slave address mapping is periodic via a "stride".  In 
    constant CASCADE_XBAR_CONFIG_C : AxiLiteCrossbarMasterConfigArray(NUM_CASCADE_MASTERS_C-1 downto 0) := (
       ----------------------------------------------------------------------
       0               => (             -- SLAVE[0]
-         baseAddr     => x"0000_0000", -- [0x0000_0000:0x000F_FFFF]
+         baseAddr     => x"0000_0000", -- [0x0000_0000:0x000F_FFFF]
          addrBits     => 20,           -- 20 bit stride
          connectivity => X"FFFF"),     -- Any master can connect to SLAVE[0]
       ----------------------------------------------------------------------
       1               => (             -- SLAVE[1]
-         baseAddr     => x"0010_0000", -- [0x0010_0000:0x001F_FFFF]
+         baseAddr     => x"0010_0000", -- [0x0010_0000:0x001F_FFFF]
          addrBits     => 20,           -- 20 bit stride
          connectivity => X"FFFF"));    -- Any master can connect to SLAVE[1]
       ----------------------------------------------------------------------
@@ -164,21 +164,21 @@ Add the following signals to the MyAxiLiteCrossbarWrapper.vhd:
 * `axilClk`: AXI-Lite clock
 * `axilRst`: AXI-Lite reset (active HIGH)
 * `axilReadMaster`: AXI-Lite read master input.
-[`AxiLiteReadMasterType` record type](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd#L56)
+[`AxiLiteReadMasterType](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd#L56) record type
 contains the following signals (defined in [AxiLitePkg](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd)):
   - araddr  : slv(31 downto 0);
   - arprot  : slv(2 downto 0);
   - arvalid : sl;
   - rready  : sl;
 * `axilReadSlave`: AXI-Lite read slave output.
-[`AxiLiteReadSlaveType` record type](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd#L82)
+[`AxiLiteReadSlaveType](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd#L82) record type
 contains the following signals (defined in [AxiLitePkg](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd)):
   - arready : sl;
   - rdata   : slv(31 downto 0);
   - rresp   : slv(1 downto 0);
   - rvalid  : sl;
 * `axilWriteMaster`: AXI-Lite write master input.
-[`AxiLiteWriteMasterType` record type](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd#L117)
+[`AxiLiteWriteMasterType](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd#L117) record type
 contains the following signals (defined in [AxiLitePkg](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd)):
   - awaddr  : slv(31 downto 0);
   - awprot  : slv(2 downto 0);
@@ -188,28 +188,28 @@ contains the following signals (defined in [AxiLitePkg](https://github.com/slacl
   - wvalid  : sl;
   - bready  : sl;
 * `axilWriteSlave`: AXI-Lite write slave output.
-[`AxiLiteWriteSlaveType` record type](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd#L150)
+[`AxiLiteWriteSlaveType](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd#L150) record type
 contains the following signals (defined in [AxiLitePkg](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd)):
   - awready : sl;
   - wready  : sl;
   - bresp   : slv(1 downto 0);
   - bvalid  : sl;
 * `axilReadMasters` is an array of AXI-Lite read master buses from first crossbar.
-[`AxiLiteReadMasterArray` record type](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd#L74)
+[`AxiLiteReadMasterArray`](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd#L74) record type
 * `axilReadSlaves` is an array of AXI-Lite read slave buses from first crossbar.
-[`AxiLiteReadSlaveArray` record type](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd#L109)
+[`AxiLiteReadSlaveArray](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd#L109) record type
 * `axilWriteMasters` is an array of AXI-Lite write master buses from first crossbar.
-[`AxiLiteWriteMasterArray` record type](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd#L142)
+[`AxiLiteWriteMasterArray](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd#L142) record type
 * `axilWriteSlaves` is an array of AXI-Lite write slave buses from first crossbar.
-[`AxiLiteWriteSlaveArray` record type](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd#L179)
+[`AxiLiteWriteSlaveArray](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd#L179) record type
 * `cascadeReadMasters` is an array of AXI-Lite read master buses from second crossbar.
-[`AxiLiteReadMasterArray` record type](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd#L74)
+[`AxiLiteReadMasterArray](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd#L74) record type
 * `cascadeReadSlaves` is an array of AXI-Lite read slave buses from second crossbar.
-[`AxiLiteReadSlaveArray` record type](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd#L109)
+[`AxiLiteReadSlaveArray](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd#L109) record type
 * `cascadeWriteMasters` is an array of AXI-Lite write master buses from second crossbar.
-[`AxiLiteWriteMasterArray` record type](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd#L142)
+[`AxiLiteWriteMasterArray](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd#L142) record type
 * `cascadeWriteSlaves` is an array of AXI-Lite write slave buses from second crossbar.
-[`AxiLiteWriteSlaveArray` record type](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd#L179)
+[`AxiLiteWriteSlaveArray](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd#L179) record type
 
 <!--- ########################################################################################### -->
 
