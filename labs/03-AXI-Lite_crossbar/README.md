@@ -17,9 +17,9 @@ Please refer to the AXI-Lite protocol specification for the complete details:
 First, copy the AXI-Lite endpoint template from the `ref_files`
 directory to the `rtl` and rename it on the way.
 ```bash
-cp ref_files/MyAxiLiteCrossbarWrapper_start.vhd rtl/MyAxiLiteCrossbarWrapper.vhd
+cp ref_files/MyAxiLiteCrossbar_start.vhd rtl/MyAxiLiteCrossbar.vhd
 ```
-Please open the `rtl/MyAxiLiteCrossbarWrapper.vhd` file in
+Please open the `rtl/MyAxiLiteCrossbar.vhd` file in
 a text editor (e.g. vim, nano, emacs, etc) at the same time as reading this README.md
 
 <!--- ########################################################################################### -->
@@ -40,45 +40,63 @@ are included from SURF.
 
 ## Entity Definition
 
-This MyAxiLiteCrossbarWrapper has the following entity definition:
+This MyAxiLiteCrossbar has the following entity definition:
 ```vhdl
-entity MyAxiLiteCrossbarWrapper is
+entity MyAxiLiteCrossbar is
+   generic (
+      TPD_G          : time := 1 ns);    -- Simulated propagation delay
    port (
-      -- AXI-Lite Interface
-      S_AXI_ACLK    : in  std_logic;
-      S_AXI_ARESETN : in  std_logic;
-      S_AXI_AWADDR  : in  std_logic_vector(31 downto 0);
-      S_AXI_AWPROT  : in  std_logic_vector(2 downto 0);
-      S_AXI_AWVALID : in  std_logic;
-      S_AXI_AWREADY : out std_logic;
-      S_AXI_WDATA   : in  std_logic_vector(31 downto 0);
-      S_AXI_WSTRB   : in  std_logic_vector(3 downto 0);
-      S_AXI_WVALID  : in  std_logic;
-      S_AXI_WREADY  : out std_logic;
-      S_AXI_BRESP   : out std_logic_vector(1 downto 0);
-      S_AXI_BVALID  : out std_logic;
-      S_AXI_BREADY  : in  std_logic;
-      S_AXI_ARADDR  : in  std_logic_vector(31 downto 0);
-      S_AXI_ARPROT  : in  std_logic_vector(2 downto 0);
-      S_AXI_ARVALID : in  std_logic;
-      S_AXI_ARREADY : out std_logic;
-      S_AXI_RDATA   : out std_logic_vector(31 downto 0);
-      S_AXI_RRESP   : out std_logic_vector(1 downto 0);
-      S_AXI_RVALID  : out std_logic;
-      S_AXI_RREADY  : in  std_logic);
+      -- AXI-Lite Bus
+      axilClk         : in  sl;
+      axilRst         : in  sl;
+      axilReadMaster  : in  AxiLiteReadMasterType;
+      axilReadSlave   : out AxiLiteReadSlaveType;
+      axilWriteMaster : in  AxiLiteWriteMasterType;
+      axilWriteSlave  : out AxiLiteWriteSlaveType);
 end MyAxiLiteCrossbarWrapper;
 ```
+* `TPD_G`: Simulation only generic used to add delay after the register stage.
+This generic has no impact to synthesis or Place and Route (PnR).
+Primary purpose is to help with visually looking at simulation waveforms.
+* `axilClk`: AXI-Lite clock
+* `axilRst`: AXI-Lite reset (active HIGH)
+* `axilReadMaster`: AXI-Lite read master input.
+[`AxiLiteReadMasterType` record type](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd#L56)
+contains the following signals (defined in [AxiLitePkg](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd)):
+  - araddr  : slv(31 downto 0);
+  - arprot  : slv(2 downto 0);
+  - arvalid : sl;
+  - rready  : sl;
+* `axilReadSlave`: AXI-Lite read slave output.
+[`AxiLiteReadSlaveType` record type](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd#L82)
+contains the following signals (defined in [AxiLitePkg](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd)):
+  - arready : sl;
+  - rdata   : slv(31 downto 0);
+  - rresp   : slv(1 downto 0);
+  - rvalid  : sl;
+* `axilWriteMaster`: AXI-Lite write master input.
+[`AxiLiteWriteMasterType` record type](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd#L117)
+contains the following signals (defined in [AxiLitePkg](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd)):
+  - awaddr  : slv(31 downto 0);
+  - awprot  : slv(2 downto 0);
+  - awvalid : sl;
+  - wdata   : slv(31 downto 0);
+  - wstrb   : slv(3 downto 0);
+  - wvalid  : sl;
+  - bready  : sl;
+* `axilWriteSlave`: AXI-Lite write slave output.
+[`AxiLiteWriteSlaveType` record type](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd#L150)
+contains the following signals (defined in [AxiLitePkg](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd)):
+  - awready : sl;
+  - wready  : sl;
+  - bresp   : slv(1 downto 0);
+  - bvalid  : sl;
 
 <!--- ########################################################################################### -->
 
 ## Signals, Types, and Constants Definition
 
-Before talking about the constant, it helps to look at this block diagram showing how the crossbars
-are connected to each other and what their respect address ranges for the AXI-Lite buses and AXI-Lite
-endpoints are:
-<img src="ref_files/block.png" width="1000">
-
-Add the following constants to the MyAxiLiteCrossbarWrapper.vhd:
+Replace "-- Placeholder for constants" with the following constants:
 ```vhdl
    constant NUM_AXIL_MASTERS_C : positive := 2;
 
@@ -141,7 +159,7 @@ is used when the crossbar slave address mapping is periodic via a "stride".  In 
       ----------------------------------------------------------------------
 ```
 
-Add the following signals to the MyAxiLiteCrossbarWrapper.vhd:
+Replace "-- Placeholder for signals" with the following signals:
 ```vhdl
    signal axilClk : sl;
    signal axilRst : sl;
@@ -215,45 +233,8 @@ contains the following signals (defined in [AxiLitePkg](https://github.com/slacl
 
 ## Adding modules into the VHDL body
 
-After `begin` and before `end mapping;`, add the following code:
-
+Replace "-- Placeholder for modules" with the following modules and connections:
 ```vhdl
-   U_ShimLayer : entity surf.SlaveAxiLiteIpIntegrator
-      generic map (
-         EN_ERROR_RESP => true,
-         FREQ_HZ       => 100000000,
-         ADDR_WIDTH    => 32)
-      port map (
-         -- IP Integrator AXI-Lite Interface
-         S_AXI_ACLK      => S_AXI_ACLK,
-         S_AXI_ARESETN   => S_AXI_ARESETN,
-         S_AXI_AWADDR    => S_AXI_AWADDR,
-         S_AXI_AWPROT    => S_AXI_AWPROT,
-         S_AXI_AWVALID   => S_AXI_AWVALID,
-         S_AXI_AWREADY   => S_AXI_AWREADY,
-         S_AXI_WDATA     => S_AXI_WDATA,
-         S_AXI_WSTRB     => S_AXI_WSTRB,
-         S_AXI_WVALID    => S_AXI_WVALID,
-         S_AXI_WREADY    => S_AXI_WREADY,
-         S_AXI_BRESP     => S_AXI_BRESP,
-         S_AXI_BVALID    => S_AXI_BVALID,
-         S_AXI_BREADY    => S_AXI_BREADY,
-         S_AXI_ARADDR    => S_AXI_ARADDR,
-         S_AXI_ARPROT    => S_AXI_ARPROT,
-         S_AXI_ARVALID   => S_AXI_ARVALID,
-         S_AXI_ARREADY   => S_AXI_ARREADY,
-         S_AXI_RDATA     => S_AXI_RDATA,
-         S_AXI_RRESP     => S_AXI_RRESP,
-         S_AXI_RVALID    => S_AXI_RVALID,
-         S_AXI_RREADY    => S_AXI_RREADY,
-         -- SURF AXI-Lite Interface
-         axilClk         => axilClk,
-         axilRst         => axilRst,
-         axilReadMaster  => axilReadMaster,
-         axilReadSlave   => axilReadSlave,
-         axilWriteMaster => axilWriteMaster,
-         axilWriteSlave  => axilWriteSlave);
-
    U_AXIL_XBAR : entity surf.AxiLiteCrossbar
       generic map (
          NUM_SLAVE_SLOTS_G  => 1,
@@ -320,8 +301,30 @@ After `begin` and before `end mapping;`, add the following code:
    end generate GEN_VEC;
 ```
 
-Refer to Section `Signals, Types, and Constants Definition` for the block diagram of these
-connections in the VHDL body.
+It helps to look at this block diagram showing how the crossbars
+are connected to each other and what their respect address ranges for the AXI-Lite buses and AXI-Lite
+endpoints are:
+<img src="ref_files/block.png" width="1000">
+
+<!--- ########################################################################################### -->
+
+## Running the cocoTB testbed
+
+cocoTB is an open-source, coroutine-based co-simulation testbench environment
+for verifying VHDL and Verilog hardware designs. Developed with Python, cocoTB
+eases the testing process by allowing developers to write test scenarios in Python,
+leveraging its extensive libraries and simplicity to create flexible and powerful tests.
+This enables more intuitive interaction with the simulation, making it possible to
+quickly develop complex test sequences, automate testing procedures, and analyze outcomes.
+By integrating cocoTB into our testing framework, we can simulate the behavior of
+AXI-Lite endpoints, among other components, in a highly efficient and user-friendly manner.
+This introduction aims to familiarize you with the basic concepts and advantages of using
+cocoTB in the context of our lab exercises, setting the stage for the detailed instructions
+that follow on how to deploy and utilize cocoTB to test the MyAxiLiteCrossbarWrapper effectively.
+
+<!--- ########################################################################################### -->
+
+### Why the `rtl/MyAxiLiteCrossbarWrapper.vhd`?
 
 cocoTB's AXI extension package does NOT support record types for the AXI interface between
 the firmware and the cocoTB simulation. This is a same issue as with AMD/Xilinx IP Integrator.
@@ -329,16 +332,102 @@ Both tool only accept `std_logic` (`sl`) and `std_logic_vector` (`slv`) port typ
 for both tools is to use a wrapper that translates the AXI record types to `std_logic` (sl) and
 `std_logic_vector` (slv).  For this lab we will be using `surf.SlaveAxiLiteIpIntegrator` for translation:
 
+```vhdl
+entity MyAxiLiteCrossbarWrapper is
+   generic (
+      EN_ERROR_RESP : boolean  := false;
+      FREQ_HZ       : positive := 100000000);             -- Units of Hz
+   port (
+      -- AXI-Lite Interface
+      S_AXI_ACLK    : in  std_logic;
+      S_AXI_ARESETN : in  std_logic;
+      S_AXI_AWADDR  : in  std_logic_vector(31 downto 0);  -- Must match ADDR_WIDTH_C
+      S_AXI_AWPROT  : in  std_logic_vector(2 downto 0);
+      S_AXI_AWVALID : in  std_logic;
+      S_AXI_AWREADY : out std_logic;
+      S_AXI_WDATA   : in  std_logic_vector(31 downto 0);
+      S_AXI_WSTRB   : in  std_logic_vector(3 downto 0);
+      S_AXI_WVALID  : in  std_logic;
+      S_AXI_WREADY  : out std_logic;
+      S_AXI_BRESP   : out std_logic_vector(1 downto 0);
+      S_AXI_BVALID  : out std_logic;
+      S_AXI_BREADY  : in  std_logic;
+      S_AXI_ARADDR  : in  std_logic_vector(31 downto 0);  -- Must match ADDR_WIDTH_C
+      S_AXI_ARPROT  : in  std_logic_vector(2 downto 0);
+      S_AXI_ARVALID : in  std_logic;
+      S_AXI_ARREADY : out std_logic;
+      S_AXI_RDATA   : out std_logic_vector(31 downto 0);
+      S_AXI_RRESP   : out std_logic_vector(1 downto 0);
+      S_AXI_RVALID  : out std_logic;
+      S_AXI_RREADY  : in  std_logic);
+end MyAxiLiteCrossbarWrapper;
+
+architecture mapping of MyAxiLiteCrossbarWrapper is
+
+   constant ADDR_WIDTH_C : positive := 32;  -- Must match the entity's port width
+
+   signal axilClk         : sl;
+   signal axilRst         : sl;
+   signal axilReadMaster  : AxiLiteReadMasterType;
+   signal axilReadSlave   : AxiLiteReadSlaveType;
+   signal axilWriteMaster : AxiLiteWriteMasterType;
+   signal axilWriteSlave  : AxiLiteWriteSlaveType;
+
+begin
+
+   U_ShimLayer : entity surf.SlaveAxiLiteIpIntegrator
+      generic map (
+         EN_ERROR_RESP => EN_ERROR_RESP,
+         FREQ_HZ       => FREQ_HZ,
+         ADDR_WIDTH    => ADDR_WIDTH_C)
+      port map (
+         -- IP Integrator AXI-Lite Interface
+         S_AXI_ACLK      => S_AXI_ACLK,
+         S_AXI_ARESETN   => S_AXI_ARESETN,
+         S_AXI_AWADDR    => S_AXI_AWADDR,
+         S_AXI_AWPROT    => S_AXI_AWPROT,
+         S_AXI_AWVALID   => S_AXI_AWVALID,
+         S_AXI_AWREADY   => S_AXI_AWREADY,
+         S_AXI_WDATA     => S_AXI_WDATA,
+         S_AXI_WSTRB     => S_AXI_WSTRB,
+         S_AXI_WVALID    => S_AXI_WVALID,
+         S_AXI_WREADY    => S_AXI_WREADY,
+         S_AXI_BRESP     => S_AXI_BRESP,
+         S_AXI_BVALID    => S_AXI_BVALID,
+         S_AXI_BREADY    => S_AXI_BREADY,
+         S_AXI_ARADDR    => S_AXI_ARADDR,
+         S_AXI_ARPROT    => S_AXI_ARPROT,
+         S_AXI_ARVALID   => S_AXI_ARVALID,
+         S_AXI_ARREADY   => S_AXI_ARREADY,
+         S_AXI_RDATA     => S_AXI_RDATA,
+         S_AXI_RRESP     => S_AXI_RRESP,
+         S_AXI_RVALID    => S_AXI_RVALID,
+         S_AXI_RREADY    => S_AXI_RREADY,
+         -- SURF AXI-Lite Interface
+         axilClk         => axilClk,
+         axilRst         => axilRst,
+         axilReadMaster  => axilReadMaster,
+         axilReadSlave   => axilReadSlave,
+         axilWriteMaster => axilWriteMaster,
+         axilWriteSlave  => axilWriteSlave);
+
+   U_MyAxiLiteCrossbar : entity work.MyAxiLiteCrossbar
+      port map (
+         -- AXI-Lite Interface
+         axilClk         => axilClk,
+         axilRst         => axilRst,
+         axilReadMaster  => axilReadMaster,
+         axilReadSlave   => axilReadSlave,
+         axilWriteMaster => axilWriteMaster,
+         axilWriteSlave  => axilWriteSlave);
+
+end mapping;
+```
 Here's an example of what the wrapper looks like when added to Vivado IP integator (A.K.A. "Block Design"):
 ```tcl
-create_bd_cell -type module -reference MyAxiLiteCrossbarWrapper MyAxiLiteCrossbarWrapper_0
+create_bd_cell -type module -reference MyAxiLiteCrossbarWrapper MyAxiLiteCrossbar_0
 ```
 <img src="ref_files/IpIntegrator.png" width="1000">
-
-[AxiDualPortRam](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiDualPortRam.vhd)
-is a wrapper on a DualPortRam that places an AXI-Lite interface on the read/write port.
-This module is being used as a general purpose memory for the cocoTB simulation to read and write
-data.
 
 <!--- ########################################################################################### -->
 
@@ -368,14 +457,23 @@ Here's an example of what the output of that `pytest` command would look like:
 ```bash
 $ pytest -rP tests/test_MyAxiLiteCrossbarWrapper.py  | grep CUSTOM
 INFO     cocotb:simulator.py:305      0.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    run_test_bytes(): idle_inserter=None, backpressure_inserter=None
-INFO     cocotb:simulator.py:305  36050.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    run_test_bytes(): idle_inserter=None, backpressure_inserter=<function cycle_pause at 0x74e9078e2560>
-INFO     cocotb:simulator.py:305  73380.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    run_test_bytes(): idle_inserter=<function cycle_pause at 0x74e9078e2560>, backpressure_inserter=None
-INFO     cocotb:simulator.py:305 110700.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    run_test_bytes(): idle_inserter=<function cycle_pause at 0x74e9078e2560>, backpressure_inserter=<function cycle_pause at 0x74e9078e2560>
+INFO     cocotb:simulator.py:305  36050.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    .... passed test
+INFO     cocotb:simulator.py:305  36050.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    run_test_bytes(): idle_inserter=None, backpressure_inserter=<function cycle_pause at 0x7651a30065f0>
+INFO     cocotb:simulator.py:305  73380.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    .... passed test
+INFO     cocotb:simulator.py:305  73380.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    run_test_bytes(): idle_inserter=<function cycle_pause at 0x7651a30065f0>, backpressure_inserter=None
+INFO     cocotb:simulator.py:305 110700.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    .... passed test
+INFO     cocotb:simulator.py:305 110700.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    run_test_bytes(): idle_inserter=<function cycle_pause at 0x7651a30065f0>, backpressure_inserter=<function cycle_pause at 0x7651a30065f0>
+INFO     cocotb:simulator.py:305 154750.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    .... passed test
 INFO     cocotb:simulator.py:305 154750.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    run_test_words()
+INFO     cocotb:simulator.py:305 281190.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    .... passed test
 INFO     cocotb:simulator.py:305 281190.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    run_stress_test(): idle_inserter=None, backpressure_inserter=None
-INFO     cocotb:simulator.py:305 314940.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    run_stress_test(): idle_inserter=None, backpressure_inserter=<function cycle_pause at 0x74e9078e2560>
-INFO     cocotb:simulator.py:305 347710.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    run_stress_test(): idle_inserter=<function cycle_pause at 0x74e9078e2560>, backpressure_inserter=None
-INFO     cocotb:simulator.py:305 380950.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    run_stress_test(): idle_inserter=<function cycle_pause at 0x74e9078e2560>, backpressure_inserter=<function cycle_pause at 0x74e9078e2560>
+INFO     cocotb:simulator.py:305 310800.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    .... passed test
+INFO     cocotb:simulator.py:305 310800.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    run_stress_test(): idle_inserter=None, backpressure_inserter=<function cycle_pause at 0x7651a30065f0>
+INFO     cocotb:simulator.py:305 345370.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    .... passed test
+INFO     cocotb:simulator.py:305 345370.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    run_stress_test(): idle_inserter=<function cycle_pause at 0x7651a30065f0>, backpressure_inserter=None
+INFO     cocotb:simulator.py:305 380000.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    .... passed test
+INFO     cocotb:simulator.py:305 380000.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    run_stress_test(): idle_inserter=<function cycle_pause at 0x7651a30065f0>, backpressure_inserter=<function cycle_pause at 0x7651a30065f0>
+INFO     cocotb:simulator.py:305 414650.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    .... passed test
 ```
 
 <!--- ########################################################################################### -->

@@ -105,7 +105,7 @@ async def run_test_bytes(dut, data_in=None, idle_inserter=None, backpressure_ins
 
     await RisingEdge(dut.S_AXI_ACLK)
     await RisingEdge(dut.S_AXI_ACLK)
-
+    dut.log.custom( f'.... passed test' )
 
 async def run_test_words(dut):
 
@@ -164,6 +164,7 @@ async def run_test_words(dut):
 
     await RisingEdge(dut.S_AXI_ACLK)
     await RisingEdge(dut.S_AXI_ACLK)
+    dut.log.custom( f'.... passed test' )
 
 async def run_stress_test(dut, idle_inserter=None, backpressure_inserter=None):
 
@@ -201,7 +202,7 @@ async def run_stress_test(dut, idle_inserter=None, backpressure_inserter=None):
 
     await RisingEdge(dut.S_AXI_ACLK)
     await RisingEdge(dut.S_AXI_ACLK)
-
+    dut.log.custom( f'.... passed test' )
 
 def cycle_pause():
     return itertools.cycle([1, 1, 1, 0])
