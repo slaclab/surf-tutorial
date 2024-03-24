@@ -1,7 +1,7 @@
 -------------------------------------------------------------------------------
 -- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
--- Description: surf.AxiLiteCrossbar cocoTB testbed
+-- Description: Reference of what the final result will be this lab
 -------------------------------------------------------------------------------
 -- This file is part of 'surf-tutorial'.
 -- It is subject to the license terms in the LICENSE.txt file found in the
@@ -21,33 +21,20 @@ library surf;
 use surf.StdRtlPkg.all;
 use surf.AxiLitePkg.all;
 
-entity MyAxiLiteCrossbarWrapper is
+entity MyAxiLiteCrossbar is
+   generic (
+      TPD_G          : time := 1 ns);    -- Simulated propagation delay
    port (
-      -- AXI-Lite Interface
-      S_AXI_ACLK    : in  std_logic;
-      S_AXI_ARESETN : in  std_logic;
-      S_AXI_AWADDR  : in  std_logic_vector(31 downto 0);
-      S_AXI_AWPROT  : in  std_logic_vector(2 downto 0);
-      S_AXI_AWVALID : in  std_logic;
-      S_AXI_AWREADY : out std_logic;
-      S_AXI_WDATA   : in  std_logic_vector(31 downto 0);
-      S_AXI_WSTRB   : in  std_logic_vector(3 downto 0);
-      S_AXI_WVALID  : in  std_logic;
-      S_AXI_WREADY  : out std_logic;
-      S_AXI_BRESP   : out std_logic_vector(1 downto 0);
-      S_AXI_BVALID  : out std_logic;
-      S_AXI_BREADY  : in  std_logic;
-      S_AXI_ARADDR  : in  std_logic_vector(31 downto 0);
-      S_AXI_ARPROT  : in  std_logic_vector(2 downto 0);
-      S_AXI_ARVALID : in  std_logic;
-      S_AXI_ARREADY : out std_logic;
-      S_AXI_RDATA   : out std_logic_vector(31 downto 0);
-      S_AXI_RRESP   : out std_logic_vector(1 downto 0);
-      S_AXI_RVALID  : out std_logic;
-      S_AXI_RREADY  : in  std_logic);
-end MyAxiLiteCrossbarWrapper;
+      -- AXI-Lite Bus
+      axilClk         : in  sl;
+      axilRst         : in  sl;
+      axilReadMaster  : in  AxiLiteReadMasterType;
+      axilReadSlave   : out AxiLiteReadSlaveType;
+      axilWriteMaster : in  AxiLiteWriteMasterType;
+      axilWriteSlave  : out AxiLiteWriteSlaveType);
+end MyAxiLiteCrossbar;
 
-architecture mapping of MyAxiLiteCrossbarWrapper is
+architecture mapping of MyAxiLiteCrossbar is
 
    constant NUM_AXIL_MASTERS_C : positive := 2;
 
@@ -56,22 +43,17 @@ architecture mapping of MyAxiLiteCrossbarWrapper is
    constant NUM_CASCADE_MASTERS_C : positive := 2;
 
    constant CASCADE_XBAR_CONFIG_C : AxiLiteCrossbarMasterConfigArray(NUM_CASCADE_MASTERS_C-1 downto 0) := (
-      0               => (
-         baseAddr     => x"0010_2000",
-         addrBits     => 12,
-         connectivity => X"0001"),
-      1               => (
-         baseAddr     => x"0016_0000",
-         addrBits     => 17,
-         connectivity => X"0001"));
-
-   signal axilClk : sl;
-   signal axilRst : sl;
-
-   signal axilReadMaster  : AxiLiteReadMasterType;
-   signal axilReadSlave   : AxiLiteReadSlaveType;
-   signal axilWriteMaster : AxiLiteWriteMasterType;
-   signal axilWriteSlave  : AxiLiteWriteSlaveType;
+      ----------------------------------------------------------------------
+      0               => (             -- SLAVE[0]
+         baseAddr     => x"0010_2000", -- [0x0010_2000:0x0010_2FFF]
+         addrBits     => 12,           -- lower 12 bits of the address
+         connectivity => X"0001"),     -- Only MASTER[0] can connect to SLAVE[0]
+      ----------------------------------------------------------------------
+      1               => (             -- SLAVE[1]
+         baseAddr     => x"0016_0000", -- [0x0016_0000:0x0017_FFFF]
+         addrBits     => 17,           -- lower 17 bits of the address
+         connectivity => X"0001"));    -- Only MASTER[0] can connect to SLAVE[1]
+      ----------------------------------------------------------------------
 
    signal axilReadMasters  : AxiLiteReadMasterArray(NUM_AXIL_MASTERS_C-1 downto 0);
    signal axilReadSlaves   : AxiLiteReadSlaveArray(NUM_AXIL_MASTERS_C-1 downto 0);
@@ -84,42 +66,6 @@ architecture mapping of MyAxiLiteCrossbarWrapper is
    signal cascadeWriteSlaves  : AxiLiteWriteSlaveArray(NUM_CASCADE_MASTERS_C-1 downto 0);
 
 begin
-
-   U_ShimLayer : entity surf.SlaveAxiLiteIpIntegrator
-      generic map (
-         EN_ERROR_RESP => true,
-         FREQ_HZ       => 100000000,
-         ADDR_WIDTH    => 32)
-      port map (
-         -- IP Integrator AXI-Lite Interface
-         S_AXI_ACLK      => S_AXI_ACLK,
-         S_AXI_ARESETN   => S_AXI_ARESETN,
-         S_AXI_AWADDR    => S_AXI_AWADDR,
-         S_AXI_AWPROT    => S_AXI_AWPROT,
-         S_AXI_AWVALID   => S_AXI_AWVALID,
-         S_AXI_AWREADY   => S_AXI_AWREADY,
-         S_AXI_WDATA     => S_AXI_WDATA,
-         S_AXI_WSTRB     => S_AXI_WSTRB,
-         S_AXI_WVALID    => S_AXI_WVALID,
-         S_AXI_WREADY    => S_AXI_WREADY,
-         S_AXI_BRESP     => S_AXI_BRESP,
-         S_AXI_BVALID    => S_AXI_BVALID,
-         S_AXI_BREADY    => S_AXI_BREADY,
-         S_AXI_ARADDR    => S_AXI_ARADDR,
-         S_AXI_ARPROT    => S_AXI_ARPROT,
-         S_AXI_ARVALID   => S_AXI_ARVALID,
-         S_AXI_ARREADY   => S_AXI_ARREADY,
-         S_AXI_RDATA     => S_AXI_RDATA,
-         S_AXI_RRESP     => S_AXI_RRESP,
-         S_AXI_RVALID    => S_AXI_RVALID,
-         S_AXI_RREADY    => S_AXI_RREADY,
-         -- SURF AXI-Lite Interface
-         axilClk         => axilClk,
-         axilRst         => axilRst,
-         axilReadMaster  => axilReadMaster,
-         axilReadSlave   => axilReadSlave,
-         axilWriteMaster => axilWriteMaster,
-         axilWriteSlave  => axilWriteSlave);
 
    U_AXIL_XBAR : entity surf.AxiLiteCrossbar
       generic map (
