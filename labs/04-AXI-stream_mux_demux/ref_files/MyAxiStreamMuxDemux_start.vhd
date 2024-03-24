@@ -1,4 +1,6 @@
 -------------------------------------------------------------------------------
+-- Company    : SLAC National Accelerator Laboratory
+-------------------------------------------------------------------------------
 -- Description: Template to start from for this lab
 -------------------------------------------------------------------------------
 -- This file is part of 'SLAC Firmware Standard Library'.

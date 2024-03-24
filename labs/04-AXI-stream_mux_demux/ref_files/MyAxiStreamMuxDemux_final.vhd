@@ -1,5 +1,7 @@
 -------------------------------------------------------------------------------
--- Description: Template to start from for this lab
+-- Company    : SLAC National Accelerator Laboratory
+-------------------------------------------------------------------------------
+-- Description: Reference of what the final result will be this lab
 -------------------------------------------------------------------------------
 -- This file is part of 'SLAC Firmware Standard Library'.
 -- It is subject to the license terms in the LICENSE.txt file found in the
