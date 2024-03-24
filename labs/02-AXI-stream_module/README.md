@@ -72,7 +72,7 @@ Generic that contain the AXI stream configurations
 * `axisClk`: AXI stream clock
 * `axisRst`: AXI stream reset (active HIGH)
 * `sAxisMaster`: AXI stream master input.
-[`AxiStreamMasterType` record type](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-stream/rtl/AxiStreamPkg.vhd#L30)
+[`AxiStreamMasterType`](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-stream/rtl/AxiStreamPkg.vhd#L30) record type
 contains the following signals (defined in [AxiStreamPkg](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-stream/rtl/AxiStreamPkg.vhd)):
   - tValid : sl;
   - tData  : slv(AXI_STREAM_MAX_TDATA_WIDTH_C-1 downto 0);
@@ -83,13 +83,13 @@ contains the following signals (defined in [AxiStreamPkg](https://github.com/sla
   - tId    : slv(7 downto 0);
   - tUser  : slv(AXI_STREAM_MAX_TDATA_WIDTH_C-1 downto 0);
 * `sAxisSlave`: AXI stream slave output.
-[`AxiStreamSlaveType` record type](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-stream/rtl/AxiStreamPkg.vhd#L59)
+[`AxiStreamSlaveType`](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-stream/rtl/AxiStreamPkg.vhd#L59) record type
 contains the following signals (defined in [AxiStreamPkg](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-stream/rtl/AxiStreamPkg.vhd)):
   - tReady : sl;
 * `mAxisMaster`: AXI stream master output.
-[`AxiStreamMasterType` record type](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-stream/rtl/AxiStreamPkg.vhd#L30)
+[`AxiStreamMasterType`](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-stream/rtl/AxiStreamPkg.vhd#L30) record type
 * `mAxisSlave`: AXI stream slave input.
-[`AxiStreamSlaveType` record type](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-stream/rtl/AxiStreamPkg.vhd#L59)
+[`AxiStreamSlaveType`](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-stream/rtl/AxiStreamPkg.vhd#L59) record type
 
 <!--- ########################################################################################### -->
 
