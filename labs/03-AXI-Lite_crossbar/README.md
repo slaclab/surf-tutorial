@@ -96,6 +96,11 @@ contains the following signals (defined in [AxiLitePkg](https://github.com/slacl
 
 ## Signals, Types, and Constants Definition
 
+Before talking about the constant, it helps to look at this block diagram showing how the crossbars
+are connected to each other and what their respect address ranges for the AXI-Lite buses and AXI-Lite
+endpoints are:
+<img src="ref_files/block.png" width="1000">
+
 Replace "-- Placeholder for constants" with the following constants:
 ```vhdl
    constant NUM_AXIL_MASTERS_C : positive := 2;
