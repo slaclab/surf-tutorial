@@ -1,6 +1,6 @@
 # AXI-stream_mux_demux
 
-This lab is an introduction to the SURF's AXI stream MUX/DEMUX (Multiplexer/Demultiplexer).
+This lab is an introduction to the SURF's AXI stream MUX/DEMUX (Multiplexer/Demultiplexer).
 By the end of this lab, you will be able to understand the following:
 - How to use the SURF AXI stream MUX and AXI stream DEMUX
 - How to configure the generics in the MUX/DEMUX for different modes
