@@ -14,6 +14,7 @@ RUN DEBIAN_FRONTEND=noninteractive \
    tclsh \
    gtkwave \
    ghdl \
+   gedit \
    locales
 
 RUN pip3 install \
