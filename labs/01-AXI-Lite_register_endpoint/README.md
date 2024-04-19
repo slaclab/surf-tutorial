@@ -394,30 +394,32 @@ register transactions.
 
 <!--- ########################################################################################### -->
 
-### Add enableCnt (read/write Register)
+### Add startCnt/stopCnt (write-only Registers)
 
 Next, add the following register to the "Mapping read/write registers" section:
 ```vhdl
-      axiSlaveRegister(axilEp, x"00C", 0, v.enableCnt);
+      axiSlaveRegister (axilEp, x"00C", 0, v.startCnt);  -- Mapped to BIT0
+      axiSlaveRegister (axilEp, x"00C", 1, v.stopCnt);   -- Mapped to BIT1
 ```
-`enableCnt` is the enable counter flag. When encoded this way, the register will retain the
-value written to it from the AXI-bus on subsequent clock cycles.
-
+`startCnt` and `stopCnt` are used to start and stop the counter. These are
+"write-only" registers because their values changed externally from the AXI-Lite
+interface in the "reset strobes" logic at the very beginning of the combinatorial process.
+We are mapping two registers on the same AXI-Lite write address in this example. The
+3rd argument (default=0) is the bitoffset.  The bitoffset is being explicitly set
+to define where in the 32-bit data that maps to the registers.
 
 <!--- ########################################################################################### -->
 
-### Add resetCnt ("write-only" Register)
+### Add enableCnt (read-only Registers)
 
 Next, add the following register to the "Mapping read/write registers" section:
 ```vhdl
-      axiSlaveRegister(axilEp, x"010", 0, v.resetCnt);
+      axiSlaveRegisterR(axilEp, x"010", 8, r.enableCnt);
 ```
-`resetCnt` is used to reset the counter to zero. Recall the `v.resetCnt := '0'` statement from
-the counter logic above. When coded this way, writing x"010" to '1' via AXI-Lite will override
-the `v.resetCnt := '0'` assignment and cause the `resetCnt` register to pulse high for one
-clock cycle. We call this a "write-only" register because the write has no effect on the readback
-value. Reading x"010 on the AXI-Lite bus will always return 0, because the `resetCnt` register
-will have already returned back to 0.
+`enableCnt` is the enable counter flag. While axiSlaveRegister()/axiSlaveRegisterR()
+supports `non-4 byte word aligned` (e.g. address offset (0x011) with bitoffset=0),
+it is `best practice` to always map the firmware to 4-byte strides.
+For this example we mapped to 0x010 address offset with a 8 bitoffset.
 
 <!--- ########################################################################################### -->
 
