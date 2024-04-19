@@ -57,9 +57,7 @@ entity MyAxiLiteEndpoint is
       axilReadMaster  : in  AxiLiteReadMasterType;
       axilReadSlave   : out AxiLiteReadSlaveType;
       axilWriteMaster : in  AxiLiteWriteMasterType;
-      axilWriteSlave  : out AxiLiteWriteSlaveType;
-      statusA         : in sl;
-      statusB         : in slv(3 downto 0));
+      axilWriteSlave  : out AxiLiteWriteSlaveType);
 end MyAxiLiteEndpoint;
 ```
 * `TPD_G`: Simulation only generic used to add delay after the register stage.
@@ -102,8 +100,6 @@ contains the following signals (defined in [AxiLitePkg](https://github.com/slacl
   - wready  : sl;
   - bresp   : slv(1 downto 0);
   - bvalid  : sl;
-* `statusA`: A 1-bit status input
-* `statusB`: A 4-bit status input
 
 <!--- ########################################################################################### -->
 
@@ -422,28 +418,6 @@ the `v.resetCnt := '0'` assignment and cause the `resetCnt` register to pulse hi
 clock cycle. We call this a "write-only" register because the write has no effect on the readback
 value. Reading x"010 on the AXI-Lite bus will always return 0, because the `resetCnt` register
 will have already returned back to 0.
-
-<!--- ########################################################################################### -->
-
-### Add statusA and statusB (read-only Registers)
-
-Next, add the following register to the "Mapping read/write registers" section:
-```vhdl
-      axiSlaveRegisterR(axilEp, x"014", 0, statusA);
-      axiSlaveRegisterR(axilEp, x"014", 8, statusB);
-```
-`statusA` and `statusB` registers are taken directly from the module inputs. (It is assumed that
-they are synchronous to `axilClk`.) We are mapping two registers on the same AXI-Lite
-address in this example. The 3rd argument is the bitOffset. The bitOffset determines where
-in the 32-bit data that the register is mapped.
-
-Note that the statusB register could be equivalenly encoded as
-```vhdl
-      axiSlaveRegisterR(axilEp, x"015", 0, statusB);
-```
-This "non 4-byte algined" address is supported by the `axiSlaveRegister()` procedures. It is
-good practice however to keep all addresses aligned with 4-byte strides, with bitOffsets to
-determine the 32-bit position, as originally shown.
 
 <!--- ########################################################################################### -->
 
