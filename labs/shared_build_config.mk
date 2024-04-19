@@ -46,6 +46,7 @@ mkdir_build:
 # Test variables
 test:
 	@echo "PWD: $(CURDIR)"
+	@echo "PROJECT: $(PROJECT)"
 	@echo "MODULES: $(MODULES)"
 	@echo "RUCKUS_DIR: $(RUCKUS_DIR)"
 	@echo "PROJ_DIR: $(PROJ_DIR)"
