@@ -465,7 +465,7 @@ async def run_test(dut, payload_lengths=None, payload_data=None, idle_inserter=N
 
 Now, run the cocoTB python script and grep for the CUSTOM logging prints
 ```bash
-pytest -rP tests/test_MyAxiStreamModuleWrapper.py  | grep CUSTOM
+pytest --capture=tee-sys --log-cli-level=INFO tests/test_MyAxiStreamModuleWrapper.py  | grep CUSTOM
 ```
 
 Here's an example of what the output of that `pytest` command would look like:
