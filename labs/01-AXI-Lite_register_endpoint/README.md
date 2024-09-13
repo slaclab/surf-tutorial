@@ -168,21 +168,18 @@ and contains all the information used to detect read/write transaction and retur
 <!--- ########################################################################################### -->
 
 ### Counter Logic
-At the beginning the `resetCnt` variable is set to `'0'`. As we will see later, this has the effect
-of stobing the register for just 1 clock cycle when it is written by the AXI-Lite bus.
+At the beginning the `startCnt` and `stopCnt` variables are set to `'0'`. As we will see later, this has the effect
+of strobing these registers for just 1 clock cycle when it is written by the AXI-Lite bus.
 
-The counter will check if the `enableCnt` register is active.  If active, then increment the counter.
-
-Next it will check if the `resetCnt` register is `'1'`. If so it will reset the counter to zero.
-Note that this overrides any counter increment performed above. By placing this logic "below",
-we have effectivly specified that `resetCnt` takes precedence over `enableCnt`.
-
+Next it will check if the `startCnt` or `stopCnt` register is `'1'`. If so it will start or stop the counter.
+Note that this overrides any counter increment performed above. 
 
 ```vhdl
       --------------------
-      -- Reset strobe
+      -- Reset the strobes
       --------------------
-      v.resetCnt := '0';
+      v.startCnt := '0';
+      v.stopCnt  := '0';
 
       ------------------------
       -- Counter logic
