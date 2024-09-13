@@ -4,6 +4,9 @@
 # EMACS temp files
 *~
 
+# Python Virtual Environment
+surf-venv/
+
 # Compiled source files
 *.com
 *.class
