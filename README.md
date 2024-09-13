@@ -24,7 +24,7 @@ Note: `recursive flag` used to initialize all submodules within the clone
 
 # System Requirements
 
-There are two method for running this tutorial:
+There are two methods for running this tutorial:
 - system install of the required tools
 - Run in a docker container
 
@@ -32,7 +32,7 @@ There are two method for running this tutorial:
 
 It is recommend to use Ubuntu 2022.04 LTS (or later Ubuntu release) for these labs:
 
-Here are the packages to install:
+Here are the Unix packages to install:
 ```bash
 # Install the apt packages
 sudo apt install \
@@ -46,10 +46,33 @@ sudo apt install \
    gtkwave \
    ghdl \
    locales
-
-# Install the pip packages
-sudo pip install -r pip_requirements.txt
 ```
+
+### Python Virtual Environment
+A Python virtual environemnt is recommended to preserve system flexibility.
+```bash
+# Create a virtual environment called surf-venv
+python3 -m venv surf-venv
+
+# Activate the virtual environment
+./surf-venv/bin/activate
+
+# Upgrade pip
+pip install --upgrade pip
+
+# Install the required python packages in the virtual environment
+python3 -m pip install -r ../surf-tutorial/pip_requirements.txt 
+
+# Deactivate with
+deactivate
+
+```
+
+If you don't want to use a Python virtual environment, you can install the Python packages to your system with:
+```bash
+sudo pip install -r requirements.txt
+``` 
+
 
 ### Docker Container Method
 
