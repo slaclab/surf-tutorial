@@ -24,7 +24,7 @@ Note: `recursive flag` used to initialize all submodules within the clone
 
 # System Requirements
 
-There are two method for running this tutorial:
+There are two methods for running this tutorial:
 - system install of the required tools
 - Run in a docker container
 
@@ -68,7 +68,7 @@ deactivate
 
 ```
 
-If you don't want to use a Python virtual environment, you can install the Python packages to your system
+If you don't want to use a Python virtual environment, you can install the Python packages to your system with:
 ```bash
 sudo pip install -r requirements.txt
 ``` 
