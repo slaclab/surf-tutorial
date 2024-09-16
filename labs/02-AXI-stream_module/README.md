@@ -222,6 +222,8 @@ deassert sAxisMaster.tValid or re-assert sAxisMaster.tValid with new information
 <!--- ########################################################################################### -->
 
 ### Outputs
+
+Replace `-- Outputs: Placeholder for your code will go here` with the following code:
 ```vhdl
       sAxisSlave  <= v.sAxisSlave;  -- Variable output
       mAxisMaster <= r.mAxisMaster; -- Registered output
