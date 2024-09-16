@@ -72,7 +72,7 @@ begin
       -- Check if the outbound tReady was active
       if (mAxisSlave.tReady = '1') then
 
-         -- Reset the outbound metadata
+         -- Reset the outbound side-channel data
          v.mAxisMaster.tValid := '0';
 
       end if;

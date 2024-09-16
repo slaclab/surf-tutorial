@@ -64,10 +64,10 @@ Primary purpose is to help with visually looking at simulation waveforms.
 Generic that contain the AXI stream configurations
   - TSTRB_EN_C         : boolean; -- Configure if tStrb used or not
   - TDATA_BYTES_C      : natural range 1 to AXI_STREAM_MAX_TKEEP_WIDTH_C; -- tData width (in units of bytes)
-  - TDEST_BITS_C       : natural range 0 to 8; -- Number of tDest bits (optional metadata field)
-  - TID_BITS_C         : natural range 0 to 8; -- Number of tId bits (optional metadata field)
+  - TDEST_BITS_C       : natural range 0 to 8; -- Number of tDest bits (optional side-channel data field)
+  - TID_BITS_C         : natural range 0 to 8; -- Number of tId bits (optional side-channel data field)
   - TKEEP_MODE_C       : TkeepModeType; -- Method for tKeep implementation to improve logical resource utilization
-  - TUSER_BITS_C       : natural range 0 to 8; -- Number of tUser bits (optional metadata field)
+  - TUSER_BITS_C       : natural range 0 to 8; -- Number of tUser bits (optional side-channel data field)
   - TUSER_MODE_C       : TUserModeType; -- Method for tUser implementation to improve logical resource utilization
 * `axisClk`: AXI stream clock
 * `axisRst`: AXI stream reset (active HIGH)
@@ -176,7 +176,7 @@ Next, add the following code to the "Flow Control" section:
       -- Check if the outbound tReady was active
       if (mAxisSlave.tReady = '1') then
 
-         -- Reset the outbound metadata
+         -- Reset the outbound side-channel data
          v.mAxisMaster.tValid := '0';
 
       end if;
