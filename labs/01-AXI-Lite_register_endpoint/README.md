@@ -368,7 +368,7 @@ address `0x----_-004` is  detected, a read (or write) transaction on
 the `scratchPad` will occur.
 
 Note: The address is in units of bytes.  AXI-Lite is a 32-bit transaction with the
-`wstrb` metadata field to do byte level `write` transactions.  We recommend using 32-bit
+`wstrb` side-channel data field to do byte level `write` transactions.  We recommend using 32-bit
 word strides (4 bytes) for mapping the addresses because it is more human readable
 and helps with mapping the registers from firmware to software.
 
