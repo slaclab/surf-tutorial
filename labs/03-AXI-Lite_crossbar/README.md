@@ -53,7 +53,7 @@ entity MyAxiLiteCrossbar is
       axilReadSlave   : out AxiLiteReadSlaveType;
       axilWriteMaster : in  AxiLiteWriteMasterType;
       axilWriteSlave  : out AxiLiteWriteSlaveType);
-end MyAxiLiteCrossbarWrapper;
+end MyAxiLiteCrossbar;
 ```
 * `TPD_G`: Simulation only generic used to add delay after the register stage.
 This generic has no impact to synthesis or Place and Route (PnR).
