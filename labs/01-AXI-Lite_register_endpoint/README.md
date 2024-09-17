@@ -672,7 +672,7 @@ tb.log.custom( f'buildString={buildString}' )
 
 Now, run the cocoTB python script and grep for the CUSTOM logging prints
 ```bash
-pytest --capture=tee-sys --log-cli-level=INFO tests/test_MyAxiLiteEndpointWrapper.py  | grep CUSTOM
+pytest --capture=tee-sys --log-cli-level=INFO tests/test_MyAxiLiteEndpointWrapper.py | grep CUSTOM
 ```
 
 Here's an example of what the output of that `pytest` command would look like:

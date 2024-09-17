@@ -53,7 +53,7 @@ entity MyAxiLiteCrossbar is
       axilReadSlave   : out AxiLiteReadSlaveType;
       axilWriteMaster : in  AxiLiteWriteMasterType;
       axilWriteSlave  : out AxiLiteWriteSlaveType);
-end MyAxiLiteCrossbarWrapper;
+end MyAxiLiteCrossbar;
 ```
 * `TPD_G`: Simulation only generic used to add delay after the register stage.
 This generic has no impact to synthesis or Place and Route (PnR).
@@ -166,14 +166,6 @@ is used when the crossbar slave address mapping is periodic via a "stride".  In 
 
 Replace "-- Placeholder for signals" with the following signals:
 ```vhdl
-   signal axilClk : sl;
-   signal axilRst : sl;
-
-   signal axilReadMaster  : AxiLiteReadMasterType;
-   signal axilReadSlave   : AxiLiteReadSlaveType;
-   signal axilWriteMaster : AxiLiteWriteMasterType;
-   signal axilWriteSlave  : AxiLiteWriteSlaveType;
-
    signal axilReadMasters  : AxiLiteReadMasterArray(NUM_AXIL_MASTERS_C-1 downto 0);
    signal axilReadSlaves   : AxiLiteReadSlaveArray(NUM_AXIL_MASTERS_C-1 downto 0);
    signal axilWriteMasters : AxiLiteWriteMasterArray(NUM_AXIL_MASTERS_C-1 downto 0);
@@ -184,39 +176,6 @@ Replace "-- Placeholder for signals" with the following signals:
    signal cascadeWriteMasters : AxiLiteWriteMasterArray(NUM_CASCADE_MASTERS_C-1 downto 0);
    signal cascadeWriteSlaves  : AxiLiteWriteSlaveArray(NUM_CASCADE_MASTERS_C-1 downto 0);
 ```
-* `axilClk`: AXI-Lite clock
-* `axilRst`: AXI-Lite reset (active HIGH)
-* `axilReadMaster`: AXI-Lite read master input.
-[`AxiLiteReadMasterType](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd#L56) record type
-contains the following signals (defined in [AxiLitePkg](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd)):
-  - araddr  : slv(31 downto 0);
-  - arprot  : slv(2 downto 0);
-  - arvalid : sl;
-  - rready  : sl;
-* `axilReadSlave`: AXI-Lite read slave output.
-[`AxiLiteReadSlaveType](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd#L82) record type
-contains the following signals (defined in [AxiLitePkg](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd)):
-  - arready : sl;
-  - rdata   : slv(31 downto 0);
-  - rresp   : slv(1 downto 0);
-  - rvalid  : sl;
-* `axilWriteMaster`: AXI-Lite write master input.
-[`AxiLiteWriteMasterType](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd#L117) record type
-contains the following signals (defined in [AxiLitePkg](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd)):
-  - awaddr  : slv(31 downto 0);
-  - awprot  : slv(2 downto 0);
-  - awvalid : sl;
-  - wdata   : slv(31 downto 0);
-  - wstrb   : slv(3 downto 0);
-  - wvalid  : sl;
-  - bready  : sl;
-* `axilWriteSlave`: AXI-Lite write slave output.
-[`AxiLiteWriteSlaveType](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd#L150) record type
-contains the following signals (defined in [AxiLitePkg](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd)):
-  - awready : sl;
-  - wready  : sl;
-  - bresp   : slv(1 downto 0);
-  - bvalid  : sl;
 * `axilReadMasters` is an array of AXI-Lite read master buses from first crossbar.
 [`AxiLiteReadMasterArray`](https://github.com/slaclab/surf/blob/v2.47.1/axi/axi-lite/rtl/AxiLitePkg.vhd#L74) record type
 * `axilReadSlaves` is an array of AXI-Lite read slave buses from first crossbar.
@@ -455,7 +414,7 @@ In the `test_MyAxiLiteCrossbarWrapper.py`, the `run_test_bytes()` and `run_stres
 
 Now, run the cocoTB python script and grep for the CUSTOM logging prints
 ```bash
-pytest --capture=tee-sys --log-cli-level=INFO tests/test_MyAxiLiteCrossbarWrapper.py  | grep CUSTOM
+pytest --capture=tee-sys --log-cli-level=INFO tests/test_MyAxiLiteCrossbarWrapper.py | grep CUSTOM
 ```
 
 Here's an example of what the output of that `pytest` command would look like:

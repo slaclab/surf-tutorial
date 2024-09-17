@@ -222,6 +222,8 @@ deassert sAxisMaster.tValid or re-assert sAxisMaster.tValid with new information
 <!--- ########################################################################################### -->
 
 ### Outputs
+
+Replace `-- Outputs: Placeholder for your code will go here` with the following code:
 ```vhdl
       sAxisSlave  <= v.sAxisSlave;  -- Variable output
       mAxisMaster <= r.mAxisMaster; -- Registered output
@@ -465,7 +467,7 @@ async def run_test(dut, payload_lengths=None, payload_data=None, idle_inserter=N
 
 Now, run the cocoTB python script and grep for the CUSTOM logging prints
 ```bash
-pytest --capture=tee-sys --log-cli-level=INFO tests/test_MyAxiStreamModuleWrapper.py  | grep CUSTOM
+pytest --capture=tee-sys --log-cli-level=INFO tests/test_MyAxiStreamModuleWrapper.py | grep CUSTOM
 ```
 
 Here's an example of what the output of that `pytest` command would look like:
