@@ -18,9 +18,8 @@ RUN DEBIAN_FRONTEND=noninteractive \
    locales
 
 RUN pip3 install \
-   cocotb \
+   'cocotb>=2.0' \
    cocotbext-axi \
-   cocotb-test \
    cocotb-bus \
    coverage \
    pytest \

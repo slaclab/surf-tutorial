@@ -13,12 +13,12 @@ import logging
 import random
 import cocotb
 from cocotb.clock      import Clock
+from cocotb.handle     import Immediate
 from cocotb.triggers   import RisingEdge
 from cocotbext.axi     import AxiLiteBus, AxiLiteMaster, AxiResp
-from cocotb.regression import TestFactory
 
 # test_MyAxiLiteEndpointWrapper
-from cocotb_test.simulator import run
+from cocotb_tools.runner import get_runner
 import pytest
 import glob
 import os
@@ -35,6 +35,14 @@ def custom(self, message, *args, **kwargs):
 # Add the custom level to the logging.Logger class
 logging.Logger.custom = custom
 
+tests_dir = os.path.dirname(__file__)
+tests_module = 'MyAxiLiteEndpointWrapper'
+
+# Testbench logger, named after the toplevel so that it shares a prefix
+# with the per-bus loggers created by cocotbext-axi
+log = logging.getLogger(f"cocotb.{tests_module.lower()}")
+log.setLevel(logging.DEBUG)
+
 # Helper function for converting 32-bit values to string
 def rdDataToStr(data):
     return hex(int.from_bytes(data, byteorder="little"))
@@ -45,11 +53,10 @@ class TB:
         # Pointer to DUT object
         self.dut = dut
 
-        self.log = logging.getLogger("cocotb.tb")
-        self.log.setLevel(logging.DEBUG)
+        self.log = log
 
         # Start clock (100 MHz) in a separate thread
-        cocotb.start_soon(Clock(dut.S_AXI_ACLK, 10.0, units='ns').start())
+        Clock(dut.S_AXI_ACLK, 10.0, unit='ns').start()
 
         # Create the AXI-Lite Master
         self.axil = AxiLiteMaster(
@@ -59,7 +66,7 @@ class TB:
             reset_active_level=False)
 
     async def cycle_reset(self):
-        self.dut.S_AXI_ARESETN.setimmediatevalue(0)
+        self.dut.S_AXI_ARESETN.set(Immediate(0))
         await RisingEdge(self.dut.S_AXI_ACLK)
         await RisingEdge(self.dut.S_AXI_ACLK)
         self.dut.S_AXI_ARESETN.value = 0
@@ -73,6 +80,7 @@ class TB:
         for i in range(delay):
             await RisingEdge(self.dut.S_AXI_ACLK)
 
+@cocotb.test()
 async def dut_tb(dut):
     # Initialize the DUT
     tb = TB(dut)
@@ -132,60 +140,65 @@ async def dut_tb(dut):
     buildString = repr(rdTxn.data.decode('utf-8').rstrip('\x00'))
     tb.log.custom( f'buildString={buildString}' )
 
-if cocotb.SIM_NAME:
-    factory = TestFactory(dut_tb)
-    factory.generate_tests()
-
-tests_dir = os.path.dirname(__file__)
-tests_module = 'MyAxiLiteEndpointWrapper'
-
 @pytest.mark.parametrize(
     "parameters", [
         {'EN_ERROR_RESP': 'true', },  # Enable bus response
     ])
 def test_MyAxiLiteEndpointWrapper(parameters):
 
-    # https://github.com/themperek/cocotb-test#arguments-for-simulatorrun
-    # https://github.com/themperek/cocotb-test/blob/master/cocotb_test/simulator.py
-    run(
-        # top level HDL
-        toplevel = f'work.{tests_module}'.lower(),
+    # https://docs.cocotb.org/en/stable/library_reference.html#python-test-runner
+    # https://docs.cocotb.org/en/stable/runner.html
+    runner = get_runner('ghdl')
 
+    # The directory used to compile the tests. (default: sim_build)
+    build_dir = f'{tests_dir}/../build/{tests_module}'
+
+    # use of synopsys package "std_logic_arith" needs the -fsynopsys option
+    # -frelaxed-rules option to allow IP integrator attributes
+    build_args = ['-fsynopsys','-frelaxed-rules']
+
+    # Analyse the VHDL source code into its own named library.
+    # The toplevel's library is built last so that "ghdl -m" can resolve
+    # the toplevel's dependencies against the already-analysed libraries.
+    for hdl_library in ['surf', 'ruckus', 'work']:
+        runner.build(
+            # The library name to compile into
+            hdl_library = hdl_library,
+
+            # VHDL source files to include
+            sources = glob.glob(f'{tests_dir}/../build/SRC_VHDL/{hdl_library}/*'),
+
+            build_args = build_args,
+            build_dir  = build_dir,
+
+            # Only elaborate once the toplevel's library is reached
+            hdl_toplevel = tests_module if hdl_library == 'work' else None,
+        )
+
+    runner.test(
         # name of the file that contains @cocotb.test() -- this file
-        # https://docs.cocotb.org/en/stable/building.html?#envvar-MODULE
-        module = f'test_{tests_module}',
+        # https://docs.cocotb.org/en/stable/building.html?#envvar-COCOTB_TEST_MODULES
+        test_module = f'test_{tests_module}',
 
-        # https://docs.cocotb.org/en/stable/building.html?#var-TOPLEVEL_LANG
-        toplevel_lang = 'vhdl',
+        # top level HDL (VHDL identifiers are case insensitive, so the original
+        # casing is used here to name the waveform file below)
+        hdl_toplevel         = tests_module,
+        hdl_toplevel_library = 'work',
 
-        # VHDL source files to include.
-        # Can be specified as a list or as a dict of lists with the library name as key,
-        # if the simulator supports named libraries.
-        vhdl_sources = {
-            'surf'   : glob.glob(f'{tests_dir}/../build/SRC_VHDL/surf/*'),
-            'ruckus' : glob.glob(f'{tests_dir}/../build/SRC_VHDL/ruckus/*'),
-            'work'   : glob.glob(f'{tests_dir}/../build/SRC_VHDL/work/*'),
-        },
+        # https://docs.cocotb.org/en/stable/building.html?#var-COCOTB_TOPLEVEL_LANG
+        hdl_toplevel_lang = 'vhdl',
 
         # A dictionary of top-level parameters/generics.
         parameters = parameters,
 
-        # The directory used to compile the tests. (default: sim_build)
-        sim_build = f'{tests_dir}/../build/{tests_module}',
+        build_dir = build_dir,
 
-        # A dictionary of extra environment variables set in simulator process.
-        extra_env=parameters,
-
-        # Select a simulator
-        simulator="ghdl",
-
-        # use of synopsys package "std_logic_arith" needs the -fsynopsys option
-        # -frelaxed-rules option to allow IP integrator attributes
-        # -Welaboration option to allow function called before elaborated of its body
-        vhdl_compile_args = ['-fsynopsys','-frelaxed-rules'],
+        # GHDL's mcode backend elaborates at run time, so the compile flags are
+        # needed here as well as in build()
+        test_args = build_args,
 
         ########################################################################
         # Dump waveform to file ($ gtkwave build/MyAxiLiteEndpointWrapper/MyAxiLiteEndpointWrapper.ghw)
         ########################################################################
-        sim_args =[f'--wave={tests_module}.ghw'],
+        waves = True,
     )

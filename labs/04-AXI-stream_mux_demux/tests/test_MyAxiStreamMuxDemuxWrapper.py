@@ -13,13 +13,13 @@ import itertools
 import logging
 import cocotb
 from cocotb.clock      import Clock
+from cocotb.handle     import Immediate
 from cocotb.triggers   import RisingEdge
-from cocotb.regression import TestFactory
 
 from cocotbext.axi import AxiStreamFrame, AxiStreamBus, AxiStreamSource, AxiStreamSink
 
 # test_MyAxiStreamMuxDemuxWrapper
-from cocotb_test.simulator import run
+from cocotb_tools.runner import get_runner
 import pytest
 import glob
 import os
@@ -35,6 +35,14 @@ def custom(self, message, *args, **kwargs):
 # Add the custom level to the logging.Logger class
 logging.Logger.custom = custom
 
+tests_dir = os.path.dirname(__file__)
+tests_module = 'MyAxiStreamMuxDemuxWrapper'
+
+# Testbench logger, named after the toplevel so that it shares a prefix
+# with the per-bus loggers created by cocotbext-axi
+log = logging.getLogger(f"cocotb.{tests_module.lower()}")
+log.setLevel(logging.DEBUG)
+
 # Helper function for converting 32-bit values to string
 def rdDataToStr(data):
     return hex(int.from_bytes(data, byteorder="little"))
@@ -45,11 +53,10 @@ class TB:
         # Pointer to DUT object
         self.dut = dut
 
-        self.log = logging.getLogger("cocotb.tb")
-        self.log.setLevel(logging.DEBUG)
+        self.log = log
 
         # Start AXIS_ACLK clock (200 MHz) in a separate thread
-        cocotb.start_soon(Clock(dut.AXIS_ACLK, 5.0, units='ns').start())
+        Clock(dut.AXIS_ACLK, 5.0, unit='ns').start()
 
         # Setup the AXI stream source
         self.source = AxiStreamSource(
@@ -76,7 +83,7 @@ class TB:
             self.sink.set_pause_generator(generator())
 
     async def cycle_reset(self):
-        self.dut.AXIS_ARESETN.setimmediatevalue(0)
+        self.dut.AXIS_ARESETN.set(Immediate(0))
         await RisingEdge(self.dut.AXIS_ACLK)
         await RisingEdge(self.dut.AXIS_ACLK)
         self.dut.AXIS_ARESETN.value = 0
@@ -86,9 +93,25 @@ class TB:
         await RisingEdge(self.dut.AXIS_ACLK)
         await RisingEdge(self.dut.AXIS_ACLK)
 
+def cycle_pause():
+    return itertools.cycle([1, 1, 1, 0])
+
+def size_list():
+    return list(range(1, 32+1))
+
+def incrementing_payload(length):
+    return bytearray(itertools.islice(itertools.cycle(range(256)), length))
+
+@cocotb.test()
+@cocotb.parametrize(
+    payload_lengths       = [size_list],
+    payload_data          = [incrementing_payload],
+    idle_inserter         = [None, cycle_pause],
+    backpressure_inserter = [None, cycle_pause],
+)
 async def run_test(dut, payload_lengths=None, payload_data=None, idle_inserter=None, backpressure_inserter=None):
 
-    dut.log.custom( f'run_test(): idle_inserter={idle_inserter}, backpressure_inserter={backpressure_inserter}' )
+    log.custom( f'run_test(): idle_inserter={idle_inserter}, backpressure_inserter={backpressure_inserter}' )
 
     tb = TB(dut)
 
@@ -122,27 +145,8 @@ async def run_test(dut, payload_lengths=None, payload_data=None, idle_inserter=N
         assert not rx_frame.tuser
 
     assert tb.sink.empty()
-    dut.log.custom( f'.... passed test' )
+    tb.log.custom( f'.... passed test' )
 
-def cycle_pause():
-    return itertools.cycle([1, 1, 1, 0])
-
-def size_list():
-    return list(range(1, 32+1))
-
-def incrementing_payload(length):
-    return bytearray(itertools.islice(itertools.cycle(range(256)), length))
-
-if cocotb.SIM_NAME:
-    factory = TestFactory(run_test)
-    factory.add_option("payload_lengths", [size_list])
-    factory.add_option("payload_data", [incrementing_payload])
-    factory.add_option("idle_inserter", [None, cycle_pause])
-    factory.add_option("backpressure_inserter", [None, cycle_pause])
-    factory.generate_tests()
-
-tests_dir = os.path.dirname(__file__)
-tests_module = 'MyAxiStreamMuxDemuxWrapper'
 
 ##############################################################################
 
@@ -152,47 +156,60 @@ tests_module = 'MyAxiStreamMuxDemuxWrapper'
     ])
 def test_MyAxiStreamMuxDemuxWrapper(parameters):
 
-    # https://github.com/themperek/cocotb-test#arguments-for-simulatorrun
-    # https://github.com/themperek/cocotb-test/blob/master/cocotb_test/simulator.py
-    run(
-        # top level HDL
-        toplevel = f'work.{tests_module}'.lower(),
+    # https://docs.cocotb.org/en/stable/library_reference.html#python-test-runner
+    # https://docs.cocotb.org/en/stable/runner.html
+    runner = get_runner('ghdl')
 
+    # The directory used to compile the tests. (default: sim_build)
+    build_dir = f'{tests_dir}/../build/{tests_module}'
+
+    # use of synopsys package "std_logic_arith" needs the -fsynopsys option
+    # -frelaxed-rules option to allow IP integrator attributes
+    # When two operators are overloaded, give preference to the explicit declaration (-fexplicit)
+    build_args = ['-fsynopsys','-frelaxed-rules', '-fexplicit']
+
+    # Analyse the VHDL source code into its own named library.
+    # The toplevel's library is built last so that "ghdl -m" can resolve
+    # the toplevel's dependencies against the already-analysed libraries.
+    for hdl_library in ['surf', 'ruckus', 'work']:
+        runner.build(
+            # The library name to compile into
+            hdl_library = hdl_library,
+
+            # VHDL source files to include
+            sources = glob.glob(f'{tests_dir}/../build/SRC_VHDL/{hdl_library}/*'),
+
+            build_args = build_args,
+            build_dir  = build_dir,
+
+            # Only elaborate once the toplevel's library is reached
+            hdl_toplevel = tests_module if hdl_library == 'work' else None,
+        )
+
+    runner.test(
         # name of the file that contains @cocotb.test() -- this file
-        # https://docs.cocotb.org/en/stable/building.html?#envvar-MODULE
-        module = f'test_{tests_module}',
+        # https://docs.cocotb.org/en/stable/building.html?#envvar-COCOTB_TEST_MODULES
+        test_module = f'test_{tests_module}',
 
-        # https://docs.cocotb.org/en/stable/building.html?#var-TOPLEVEL_LANG
-        toplevel_lang = 'vhdl',
+        # top level HDL (VHDL identifiers are case insensitive, so the original
+        # casing is used here to name the waveform file below)
+        hdl_toplevel         = tests_module,
+        hdl_toplevel_library = 'work',
 
-        # VHDL source files to include.
-        # Can be specified as a list or as a dict of lists with the library name as key,
-        # if the simulator supports named libraries.
-        vhdl_sources = {
-            'surf'   : glob.glob(f'{tests_dir}/../build/SRC_VHDL/surf/*'),
-            'ruckus' : glob.glob(f'{tests_dir}/../build/SRC_VHDL/ruckus/*'),
-            'work'   : glob.glob(f'{tests_dir}/../build/SRC_VHDL/work/*'),
-        },
+        # https://docs.cocotb.org/en/stable/building.html?#var-COCOTB_TOPLEVEL_LANG
+        hdl_toplevel_lang = 'vhdl',
 
         # A dictionary of top-level parameters/generics.
         parameters = parameters,
 
-        # The directory used to compile the tests. (default: sim_build)
-        sim_build = f'{tests_dir}/../build/{tests_module}',
+        build_dir = build_dir,
 
-        # A dictionary of extra environment variables set in simulator process.
-        extra_env=parameters,
-
-        # Select a simulator
-        simulator="ghdl",
-
-        # use of synopsys package "std_logic_arith" needs the -fsynopsys option
-        # -frelaxed-rules option to allow IP integrator attributes
-        # When two operators are overloaded, give preference to the explicit declaration (-fexplicit)
-        vhdl_compile_args = ['-fsynopsys','-frelaxed-rules', '-fexplicit'],
+        # GHDL's mcode backend elaborates at run time, so the compile flags are
+        # needed here as well as in build()
+        test_args = build_args,
 
         ########################################################################
         # Dump waveform to file ($ gtkwave build/MyAxiStreamMuxDemuxWrapper/MyAxiStreamMuxDemuxWrapper.ghw)
         ########################################################################
-        sim_args =[f'--wave={tests_module}.ghw'],
+        waves = True,
     )
