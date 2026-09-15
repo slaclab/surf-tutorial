@@ -415,7 +415,7 @@ The `tests/test_MyAxiStreamModuleWrapper.py` cocotb test script is provided in t
 This cocotb script uses the [cocotbext-axi library](https://pypi.org/project/cocotbext-axi/),
 which provides a cocotb API for communicating with the firmware via AXI, AXI-Lite, and AXI-stream interfaces.
 
-In the `test_MyAxiStreamModuleWrapper.py`, the `run_test()` function will be run with four different combinations of AXI-stream traffic:
+In the `test_MyAxiStreamModuleWrapper.py`, the `@cocotb.parametrize` decorator runs the `run_test()` function with four different combinations of AXI-stream traffic:
 - No IDLEs inserted, no backpressure applied
 - No IDLEs inserted, backpressure applied
 - IDLEs inserted, no backpressure applied
@@ -425,10 +425,17 @@ For each `run_test()`, the code will send a payload of 1 byte and increment the 
 The `CalculateExpectedResult()` function will compare the received payload with the software-calculated "expected" payload.
 If there is a mismatch between the received and expected payload, the code will raise an exception error and stop the simulation.
 ```python
+@cocotb.test()
+@cocotb.parametrize(
+    payload_lengths       = [size_list],
+    payload_data          = [incrementing_payload],
+    idle_inserter         = [None, cycle_pause],
+    backpressure_inserter = [None, cycle_pause],
+)
 async def run_test(dut, payload_lengths=None, payload_data=None, idle_inserter=None, backpressure_inserter=None):
 
     # Debug messages in case it fails
-    dut.log.custom( f'Test: TDATA_NUM_BYTES={dut.TDATA_NUM_BYTES.value.integer}, idle_inserter={idle_inserter}, backpressure_inserter={backpressure_inserter}' )
+    log.custom( f'Test: TDATA_NUM_BYTES={dut.TDATA_NUM_BYTES.value.to_unsigned()}, idle_inserter={idle_inserter}, backpressure_inserter={backpressure_inserter}' )
 
     tb = TB(dut)
 
@@ -462,7 +469,7 @@ async def run_test(dut, payload_lengths=None, payload_data=None, idle_inserter=N
         assert not rx_frame.tuser
 
     assert tb.sink.empty()
-    dut.log.custom( f'.... passed test' )
+    tb.log.custom( f'.... passed test' )
 ```
 
 Now, run the cocoTB python script and grep for the CUSTOM logging prints
@@ -473,14 +480,14 @@ pytest --capture=tee-sys --log-cli-level=INFO tests/test_MyAxiStreamModuleWrappe
 Here's an example of what the output of that `pytest` command would look like:
 ```bash
 $ pytest -rP tests/test_MyAxiStreamModuleWrapper.py  | grep CUSTOM
-INFO     cocotb:simulator.py:305      0.00ns CUSTOM   cocotb.myaxistreammodulewrapper    Test: TDATA_NUM_BYTES=4, idle_inserter=None, backpressure_inserter=None
-INFO     cocotb:simulator.py:305   1510.00ns CUSTOM   cocotb.myaxistreammodulewrapper    .... passed test
-INFO     cocotb:simulator.py:305   1510.00ns CUSTOM   cocotb.myaxistreammodulewrapper    Test: TDATA_NUM_BYTES=4, idle_inserter=None, backpressure_inserter=<function cycle_pause at 0x7fca1abde4d0>
-INFO     cocotb:simulator.py:305   7340.00ns CUSTOM   cocotb.myaxistreammodulewrapper    .... passed test
-INFO     cocotb:simulator.py:305   7340.00ns CUSTOM   cocotb.myaxistreammodulewrapper    Test: TDATA_NUM_BYTES=4, idle_inserter=<function cycle_pause at 0x7fca1abde4d0>, backpressure_inserter=None
-INFO     cocotb:simulator.py:305  13170.00ns CUSTOM   cocotb.myaxistreammodulewrapper    .... passed test
-INFO     cocotb:simulator.py:305  13170.00ns CUSTOM   cocotb.myaxistreammodulewrapper    Test: TDATA_NUM_BYTES=4, idle_inserter=<function cycle_pause at 0x7fca1abde4d0>, backpressure_inserter=<function cycle_pause at 0x7fca1abde4d0>
-INFO     cocotb:simulator.py:305  19000.00ns CUSTOM   cocotb.myaxistreammodulewrapper    .... passed test
+     0.00ns CUSTOM   cocotb.myaxistreammodulewrapper    Test: TDATA_NUM_BYTES=4, idle_inserter=None, backpressure_inserter=None
+  1510.00ns CUSTOM   cocotb.myaxistreammodulewrapper    .... passed test
+  1510.00ns CUSTOM   cocotb.myaxistreammodulewrapper    Test: TDATA_NUM_BYTES=4, idle_inserter=None, backpressure_inserter=<function cycle_pause at 0x7aa23a662fb0>
+  7340.00ns CUSTOM   cocotb.myaxistreammodulewrapper    .... passed test
+  7340.00ns CUSTOM   cocotb.myaxistreammodulewrapper    Test: TDATA_NUM_BYTES=4, idle_inserter=<function cycle_pause at 0x7aa23a662fb0>, backpressure_inserter=None
+ 13170.00ns CUSTOM   cocotb.myaxistreammodulewrapper    .... passed test
+ 13170.00ns CUSTOM   cocotb.myaxistreammodulewrapper    Test: TDATA_NUM_BYTES=4, idle_inserter=<function cycle_pause at 0x7aa23a662fb0>, backpressure_inserter=<function cycle_pause at 0x7aa23a662fb0>
+ 19000.00ns CUSTOM   cocotb.myaxistreammodulewrapper    .... passed test
 ```
 
 <!--- ########################################################################################### -->
