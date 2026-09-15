@@ -218,8 +218,7 @@ def test_MyAxiStreamModuleWrapper(parameters):
         # https://docs.cocotb.org/en/stable/building.html?#envvar-COCOTB_TEST_MODULES
         test_module = f'test_{tests_module}',
 
-        # top level HDL (VHDL identifiers are case insensitive, so the original
-        # casing is used here to name the waveform file below)
+        # top level HDL (lowercase to match the instance name reported by GHDL's VPI)
         hdl_toplevel         = tests_module.lower(),
         hdl_toplevel_library = 'work',
 
