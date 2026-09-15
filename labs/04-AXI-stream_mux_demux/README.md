@@ -357,7 +357,7 @@ The `tests/test_MyAxiStreamMuxDemuxWrapper.py` cocotb test script is provided in
 This cocotb script uses the [cocotbext-axi library](https://pypi.org/project/cocotbext-axi/),
 which provides a cocotb API for communicating with the firmware via AXI, AXI-Lite, and AXI-stream interfaces.
 
-In the `test_MyAxiStreamMuxDemuxWrapper.py`, the `run_test()` function will be run with four different combinations of AXI-stream traffic:
+In the `test_MyAxiStreamMuxDemuxWrapper.py`, the `@cocotb.parametrize` decorator runs the `run_test()` function with four different combinations of AXI-stream traffic:
 - No IDLEs inserted, no backpressure applied
 - No IDLEs inserted, backpressure applied
 - IDLEs inserted, no backpressure applied
@@ -367,9 +367,16 @@ For each `run_test()`, the code will compare the payload sent to the firmware DE
 payload received by the firmware MUX.
 If there is a mismatch between the sent/received payload, the code will raise an exception error and stop the simulation.
 ```python
+@cocotb.test()
+@cocotb.parametrize(
+    payload_lengths       = [size_list],
+    payload_data          = [incrementing_payload],
+    idle_inserter         = [None, cycle_pause],
+    backpressure_inserter = [None, cycle_pause],
+)
 async def run_test(dut, payload_lengths=None, payload_data=None, idle_inserter=None, backpressure_inserter=None):
 
-    dut.log.custom( f'run_test(): idle_inserter={idle_inserter}, backpressure_inserter={backpressure_inserter}' )
+    log.custom( f'run_test(): idle_inserter={idle_inserter}, backpressure_inserter={backpressure_inserter}' )
 
     tb = TB(dut)
 
@@ -403,7 +410,7 @@ async def run_test(dut, payload_lengths=None, payload_data=None, idle_inserter=N
         assert not rx_frame.tuser
 
     assert tb.sink.empty()
-    dut.log.custom( f'.... passed test' )
+    tb.log.custom( f'.... passed test' )
 ```
 
 Now, run the cocoTB python script and grep for the CUSTOM logging prints
@@ -414,14 +421,14 @@ pytest --capture=tee-sys --log-cli-level=INFO tests/test_MyAxiStreamMuxDemuxWrap
 Here's an example of what the output of that `pytest` command would look like:
 ```bash
 $ pytest -rP tests/test_MyAxiStreamMuxDemuxWrapper.py | grep CUSTOM
-INFO     cocotb:simulator.py:305      0.00ns CUSTOM   cocotb.myaxistreammuxdemuxwrapper  run_test(): idle_inserter=None, backpressure_inserter=None
-INFO     cocotb:simulator.py:305    920.00ns CUSTOM   cocotb.myaxistreammuxdemuxwrapper  .... passed test
-INFO     cocotb:simulator.py:305    920.00ns CUSTOM   cocotb.myaxistreammuxdemuxwrapper  run_test(): idle_inserter=None, backpressure_inserter=<function cycle_pause at 0x714ff3376320>
-INFO     cocotb:simulator.py:305   3835.00ns CUSTOM   cocotb.myaxistreammuxdemuxwrapper  .... passed test
-INFO     cocotb:simulator.py:305   3835.00ns CUSTOM   cocotb.myaxistreammuxdemuxwrapper  run_test(): idle_inserter=<function cycle_pause at 0x714ff3376320>, backpressure_inserter=None
-INFO     cocotb:simulator.py:305   6755.00ns CUSTOM   cocotb.myaxistreammuxdemuxwrapper  .... passed test
-INFO     cocotb:simulator.py:305   6755.00ns CUSTOM   cocotb.myaxistreammuxdemuxwrapper  run_test(): idle_inserter=<function cycle_pause at 0x714ff3376320>, backpressure_inserter=<function cycle_pause at 0x714ff3376320>
-INFO     cocotb:simulator.py:305   9690.00ns CUSTOM   cocotb.myaxistreammuxdemuxwrapper  .... passed test
+     0.00ns CUSTOM   cocotb.myaxistreammuxdemuxwrapper  run_test(): idle_inserter=None, backpressure_inserter=None
+   920.00ns CUSTOM   cocotb.myaxistreammuxdemuxwrapper  .... passed test
+   920.00ns CUSTOM   cocotb.myaxistreammuxdemuxwrapper  run_test(): idle_inserter=None, backpressure_inserter=<function cycle_pause at 0x7259e16e2e50>
+  3835.00ns CUSTOM   cocotb.myaxistreammuxdemuxwrapper  .... passed test
+  3835.00ns CUSTOM   cocotb.myaxistreammuxdemuxwrapper  run_test(): idle_inserter=<function cycle_pause at 0x7259e16e2e50>, backpressure_inserter=None
+  6755.00ns CUSTOM   cocotb.myaxistreammuxdemuxwrapper  .... passed test
+  6755.00ns CUSTOM   cocotb.myaxistreammuxdemuxwrapper  run_test(): idle_inserter=<function cycle_pause at 0x7259e16e2e50>, backpressure_inserter=<function cycle_pause at 0x7259e16e2e50>
+  9690.00ns CUSTOM   cocotb.myaxistreammuxdemuxwrapper  .... passed test
 ```
 
 <!--- ########################################################################################### -->

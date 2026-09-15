@@ -131,7 +131,7 @@ This MyAxiLiteEndpoint has the following signals, types, constants:
   - `scratchPad`: 32-bit general purpose read/write register
   - `cnt`: 32-bit counter that's controlled by enableCnt/resetCnt
   - `enableCnt`: Enable counter flag
-  - `resetCnt': Reset the counter to zero
+  - `resetCnt`: Reset the counter to zero
   - `axilReadSlave`: AXI-Lite read slave bus used to respond to a read transactions
   - `axilWriteSlave`: AXI-Lite write slave bus used to respond to a write transactions
 * `REG_INIT_C`: constant defining the registers' initialized values after reset
@@ -596,7 +596,7 @@ which is defined in the Makefile by the `PRJ_VERSION` environmental variable.
 # Get the FpgaVersion register
 rdTxn = await tb.axil.read(address=0x000, length=4)
 assert rdTxn.resp == AxiResp.OKAY
-tb.log.custom(f'FpgaVersion={rdDataToStr(rdTxn.data)}')
+tb.log.custom( f'FpgaVersion={rdDataToStr(rdTxn.data)}' )
 ```
 
 Next, it will read the initialized value of the `scratchpad` register and print to the Python log.
@@ -607,14 +607,14 @@ there are no AXI-Lite transaction response errors, then the scratchpad testing i
 ```python
 # Test the scratchpad write/read operations
 rdTxn = await tb.axil.read(address=0x004, length=4)
-tb.log.custom(f'scratchpad (init value)={rdDataToStr(rdTxn.data)}')
+tb.log.custom( f'scratchpad(init value)={rdDataToStr(rdTxn.data)}' )
 testWord = int(random.getrandbits(32)).to_bytes(4, "little")
 wrTxn = await tb.axil.write(address=0x004, data=testWord)
 assert wrTxn.resp == AxiResp.OKAY
 rdTxn = await tb.axil.read(address=0x004, length=4)
 assert rdTxn.resp == AxiResp.OKAY
 assert rdTxn.data == testWord
-tb.log.custom(f'Passed the scratchpad testing')
+tb.log.custom( f'Passed the scratchpad testing' )
 ```
 
 Next, the code will check the current values of the counter and the enable flag for that counter.
@@ -678,17 +678,17 @@ pytest --capture=tee-sys --log-cli-level=INFO tests/test_MyAxiLiteEndpointWrappe
 Here's an example of what the output of that `pytest` command would look like:
 ```bash
 $ pytest -rP tests/test_MyAxiLiteEndpointWrapper.py  | grep CUSTOM
-INFO     cocotb:simulator.py:305     90.00ns CUSTOM   cocotb.tb   FpgaVersion=0x1020304
-INFO     cocotb:simulator.py:305    130.00ns CUSTOM   cocotb.tb   scratchpad(init value)=0xdeadbeef
-INFO     cocotb:simulator.py:305    210.00ns CUSTOM   cocotb.tb   Passed the scratchpad testing
-INFO     cocotb:simulator.py:305    250.00ns CUSTOM   cocotb.tb   cnt(init value)=0x0
-INFO     cocotb:simulator.py:305    290.00ns CUSTOM   cocotb.tb   enableCnt(init value)=0x0
-INFO     cocotb:simulator.py:305   1370.00ns CUSTOM   cocotb.tb   cnt(running)=0x66
-INFO     cocotb:simulator.py:305   1410.00ns CUSTOM   cocotb.tb   enableCnt(running)=0x1
-INFO     cocotb:simulator.py:305   1490.00ns CUSTOM   cocotb.tb   cnt(stopped)=0x70
-INFO     cocotb:simulator.py:305   1530.00ns CUSTOM   cocotb.tb   enableCnt(stopped)=0x0
-INFO     cocotb:simulator.py:305   1650.00ns CUSTOM   cocotb.tb   gitHash=0xdc8635e2bd369a7d8b1260488a2590034836d7d2
-INFO     cocotb:simulator.py:305   2950.00ns CUSTOM   cocotb.tb   buildString='": GHDL 1.0.0 (Ubuntu 1.0.0+dfsg-6) [Dunoon edition], rdsrv409 (Ubuntu 22.04.4 LTS), Built Fri Mar 22 11:39
+    90.00ns CUSTOM   cocotb.myaxiliteendpointwrapper    FpgaVersion=0x1020304
+   130.00ns CUSTOM   cocotb.myaxiliteendpointwrapper    scratchpad(init value)=0xdeadbeef
+   210.00ns CUSTOM   cocotb.myaxiliteendpointwrapper    Passed the scratchpad testing
+   250.00ns CUSTOM   cocotb.myaxiliteendpointwrapper    cnt(init value)=0x0
+   290.00ns CUSTOM   cocotb.myaxiliteendpointwrapper    enableCnt(init value)=0x0
+  1370.00ns CUSTOM   cocotb.myaxiliteendpointwrapper    cnt(running)=0x66
+  1410.00ns CUSTOM   cocotb.myaxiliteendpointwrapper    enableCnt(running)=0x1
+  1490.00ns CUSTOM   cocotb.myaxiliteendpointwrapper    cnt(stopped)=0x70
+  1530.00ns CUSTOM   cocotb.myaxiliteendpointwrapper    enableCnt(stopped)=0x0
+  1650.00ns CUSTOM   cocotb.myaxiliteendpointwrapper    gitHash=0x97ae3812d33cc97675ba1896a89a64d77b74ba97
+  2950.00ns CUSTOM   cocotb.myaxiliteendpointwrapper    buildString='MyAxiLiteEndpointWrapper: GHDL 5.0.1 (Ubuntu 5.0.1+dfsg-1ubuntu1) [Dunoon edition], PC106318 (Ubuntu 26.04 LTS), Built Mon Sep 14 17:36:24 PDT 2026 by rardino'
 ```
 
 <!--- ########################################################################################### -->

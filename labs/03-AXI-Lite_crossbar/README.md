@@ -420,24 +420,24 @@ pytest --capture=tee-sys --log-cli-level=INFO tests/test_MyAxiLiteCrossbarWrappe
 Here's an example of what the output of that `pytest` command would look like:
 ```bash
 $ pytest -rP tests/test_MyAxiLiteCrossbarWrapper.py  | grep CUSTOM
-INFO     cocotb:simulator.py:305      0.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    run_test_bytes(): idle_inserter=None, backpressure_inserter=None
-INFO     cocotb:simulator.py:305  36050.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    .... passed test
-INFO     cocotb:simulator.py:305  36050.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    run_test_bytes(): idle_inserter=None, backpressure_inserter=<function cycle_pause at 0x7651a30065f0>
-INFO     cocotb:simulator.py:305  73380.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    .... passed test
-INFO     cocotb:simulator.py:305  73380.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    run_test_bytes(): idle_inserter=<function cycle_pause at 0x7651a30065f0>, backpressure_inserter=None
-INFO     cocotb:simulator.py:305 110700.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    .... passed test
-INFO     cocotb:simulator.py:305 110700.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    run_test_bytes(): idle_inserter=<function cycle_pause at 0x7651a30065f0>, backpressure_inserter=<function cycle_pause at 0x7651a30065f0>
-INFO     cocotb:simulator.py:305 154750.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    .... passed test
-INFO     cocotb:simulator.py:305 154750.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    run_test_words()
-INFO     cocotb:simulator.py:305 281190.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    .... passed test
-INFO     cocotb:simulator.py:305 281190.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    run_stress_test(): idle_inserter=None, backpressure_inserter=None
-INFO     cocotb:simulator.py:305 310800.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    .... passed test
-INFO     cocotb:simulator.py:305 310800.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    run_stress_test(): idle_inserter=None, backpressure_inserter=<function cycle_pause at 0x7651a30065f0>
-INFO     cocotb:simulator.py:305 345370.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    .... passed test
-INFO     cocotb:simulator.py:305 345370.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    run_stress_test(): idle_inserter=<function cycle_pause at 0x7651a30065f0>, backpressure_inserter=None
-INFO     cocotb:simulator.py:305 380000.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    .... passed test
-INFO     cocotb:simulator.py:305 380000.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    run_stress_test(): idle_inserter=<function cycle_pause at 0x7651a30065f0>, backpressure_inserter=<function cycle_pause at 0x7651a30065f0>
-INFO     cocotb:simulator.py:305 414650.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    .... passed test
+     0.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    run_test_bytes(): idle_inserter=None, backpressure_inserter=None
+ 36050.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    .... passed test
+ 36050.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    run_test_bytes(): idle_inserter=None, backpressure_inserter=<function cycle_pause at 0x74acf7e62da0>
+ 73380.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    .... passed test
+ 73380.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    run_test_bytes(): idle_inserter=<function cycle_pause at 0x74acf7e62da0>, backpressure_inserter=None
+110700.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    .... passed test
+110700.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    run_test_bytes(): idle_inserter=<function cycle_pause at 0x74acf7e62da0>, backpressure_inserter=<function cycle_pause at 0x74acf7e62da0>
+154750.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    .... passed test
+154750.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    run_test_words()
+281190.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    .... passed test
+281190.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    run_stress_test(): idle_inserter=None, backpressure_inserter=None
+314190.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    .... passed test
+314190.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    run_stress_test(): idle_inserter=None, backpressure_inserter=<function cycle_pause at 0x74acf7e62da0>
+355520.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    .... passed test
+355520.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    run_stress_test(): idle_inserter=<function cycle_pause at 0x74acf7e62da0>, backpressure_inserter=None
+389000.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    .... passed test
+389000.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    run_stress_test(): idle_inserter=<function cycle_pause at 0x74acf7e62da0>, backpressure_inserter=<function cycle_pause at 0x74acf7e62da0>
+424210.00ns CUSTOM   cocotb.myaxilitecrossbarwrapper    .... passed test
 ```
 
 <!--- ########################################################################################### -->
