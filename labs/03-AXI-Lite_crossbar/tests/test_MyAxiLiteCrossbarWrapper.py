@@ -41,7 +41,7 @@ tests_module = 'MyAxiLiteCrossbarWrapper'
 # Testbench logger, named after the toplevel so that it shares a prefix
 # with the per-bus loggers created by cocotbext-axi
 log = logging.getLogger(f"cocotb.{tests_module.lower()}")
-log.setLevel(logging.DEBUG)
+log.setLevel(logging.INFO)
 
 # Helper function for converting 32-bit values to string
 def rdDataToStr(data):
@@ -271,7 +271,7 @@ def test_MyAxiLiteCrossbarWrapper(parameters):
 
         # top level HDL (VHDL identifiers are case insensitive, so the original
         # casing is used here to name the waveform file below)
-        hdl_toplevel         = tests_module,
+        hdl_toplevel         = tests_module.lower(),
         hdl_toplevel_library = 'work',
 
         # https://docs.cocotb.org/en/stable/building.html?#var-COCOTB_TOPLEVEL_LANG
