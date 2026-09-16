@@ -688,7 +688,7 @@ $ pytest -rP tests/test_MyAxiLiteEndpointWrapper.py  | grep CUSTOM
   1490.00ns CUSTOM   cocotb.myaxiliteendpointwrapper    cnt(stopped)=0x70
   1530.00ns CUSTOM   cocotb.myaxiliteendpointwrapper    enableCnt(stopped)=0x0
   1650.00ns CUSTOM   cocotb.myaxiliteendpointwrapper    gitHash=0x97ae3812d33cc97675ba1896a89a64d77b74ba97
-  2950.00ns CUSTOM   cocotb.myaxiliteendpointwrapper    buildString='MyAxiLiteEndpointWrapper: GHDL 5.0.1 (Ubuntu 5.0.1+dfsg-1ubuntu1) [Dunoon edition], PC106318 (Ubuntu 26.04 LTS), Built Mon Sep 14 17:36:24 PDT 2026 by rardino'
+  2950.00ns CUSTOM   cocotb.myaxiliteendpointwrapper    buildString='"MyAxiLiteEndpointWrapper: GHDL 5.0.1 (Ubuntu 5.0.1+dfsg-1ubuntu1) [Dunoon edition], PC106318 (Ubuntu 26.04 LTS), Built Mon Sep 14 17:36:24 PDT 2026 by rardino"'
 ```
 
 <!--- ########################################################################################### -->

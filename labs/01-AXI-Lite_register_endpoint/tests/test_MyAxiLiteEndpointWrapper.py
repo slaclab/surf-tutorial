@@ -153,9 +153,10 @@ def test_MyAxiLiteEndpointWrapper(parameters):
     # The directory used to compile the tests. (default: sim_build)
     build_dir = f'{tests_dir}/../build/{tests_module}'
 
+    # --std=08 for surf's "VHDL 2008" sources; must come before -frelaxed-rules
     # use of synopsys package "std_logic_arith" needs the -fsynopsys option
     # -frelaxed-rules option to allow IP integrator attributes
-    build_args = ['-fsynopsys','-frelaxed-rules']
+    build_args = ['--std=08', '-fsynopsys','-frelaxed-rules']
 
     # Analyse the VHDL source code into its own named library.
     # The toplevel's library is built last so that "ghdl -m" can resolve
