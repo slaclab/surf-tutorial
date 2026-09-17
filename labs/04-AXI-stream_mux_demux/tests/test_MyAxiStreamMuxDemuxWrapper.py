@@ -163,10 +163,11 @@ def test_MyAxiStreamMuxDemuxWrapper(parameters):
     # The directory used to compile the tests. (default: sim_build)
     build_dir = f'{tests_dir}/../build/{tests_module}'
 
+    # --std=08 for surf's "VHDL 2008" sources; must come before -frelaxed-rules
     # use of synopsys package "std_logic_arith" needs the -fsynopsys option
     # -frelaxed-rules option to allow IP integrator attributes
     # When two operators are overloaded, give preference to the explicit declaration (-fexplicit)
-    build_args = ['-fsynopsys','-frelaxed-rules', '-fexplicit']
+    build_args = ['--std=08', '-fsynopsys','-frelaxed-rules', '-fexplicit']
 
     # Analyse the VHDL source code into its own named library.
     # The toplevel's library is built last so that "ghdl -m" can resolve

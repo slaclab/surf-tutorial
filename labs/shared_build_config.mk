@@ -25,7 +25,10 @@ export VIVADO_VERSION := -1.0
 export OVERRIDE_SUBMODULE_LOCKS := 1
 
 # GHDL build flags
-GHDLFLAGS := --workdir=$(OUT_DIR) --ieee=synopsys -fexplicit \
+# --std=08 is required because surf tags some sources as "VHDL 2008".
+# Keep --std=08 ahead of -frelaxed-rules: --std resets the standard-dependent
+# settings, silently discarding any -frelaxed-rules that precedes it.
+GHDLFLAGS := --workdir=$(OUT_DIR) --std=08 --ieee=synopsys -fexplicit \
              -frelaxed-rules --warn-no-library
 
 # Include the ruckus shared Makefile header
@@ -58,7 +61,7 @@ test:
 # Load source code into GHDL
 src: mkdir_build
 	@echo "VHDL Source Code Loading"
-	@$(RUCKUS_DIR)/ghdl/import.tcl >/dev/null 2>&1
+	@$(RUCKUS_DIR)/ghdl/load_source_code.tcl >/dev/null
 
 # VHDL syntax checking
 syntax: src
